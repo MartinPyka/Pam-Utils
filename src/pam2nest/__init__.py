@@ -12,7 +12,9 @@ __version__ = "0.1.0"
 __author__ = "Sebastian Klatt"
 
 
+# TODO(SK): docstring unprecise
 def import_zip(filepath):
+    """Returns a dictionary of lists"""
     matrices = SUPPORTED_SUFFIXES
 
     with zipfile.ZipFile(filepath, "r", zipfile.ZIP_DEFLATED) as file:
@@ -20,8 +22,6 @@ def import_zip(filepath):
             filename_split = os.path.splitext(filename)
             filename_suffix = ''.join(filename_split[:-1]).rsplit("_", 1)[-1]
             filename_extension = filename_split[-1]
-
-            print filename_suffix
 
             if filename_extension not in SUPPORTED_FILETYPES.keys():
                 message = "Filetype not supported"
@@ -41,7 +41,9 @@ def import_zip(filepath):
     return matrices
 
 
+# TODO(SK): docstring unprecise
 def _csv_read(data):
+    """Returns list of tuples corresponding to csv data input"""
     reader = csv.reader(
         data,
         delimiter=";",
