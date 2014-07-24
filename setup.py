@@ -6,12 +6,12 @@ try:
 except ImportError:
     from distutils.core import setup
 
-source_path = os.path.abspath("src")
+source_path = os.path.abspath("pamutils")
 sys.path.append(source_path)
 
-import pam2nest
+import pamutils
 
-packages = ["pam2nest"]
+packages = ["pamutils"]
 requires = []
 
 with open("README") as f:
@@ -20,8 +20,8 @@ with open("LICENSE") as f:
     license = f.read()
 
 setup(
-    name="pam2nest",
-    version=pam2nest.__version__,
+    name="pamutils",
+    version=pamutils.__version__,
     description="",  # TODO(SK): description missing
     long_description=readme,
     author="Sebastian Klatt"
@@ -29,7 +29,7 @@ setup(
     url="",  # TODO(SK): url missing
     packages=packages,
     package_data={"": ["LICENSE"]},
-    package_dir={"": "src"},
+    package_dir={"": "pamutils"},
     include_package_data=True,
     install_requires=requires,
     license="GPL v2",
