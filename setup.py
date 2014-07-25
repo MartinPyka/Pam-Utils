@@ -24,7 +24,7 @@ setup(
     version=pamutils.__version__,
     description="",  # TODO(SK): description missing
     long_description=readme,
-    author="Sebastian Klatt"
+    author="Sebastian Klatt",
     author_email="sebastian.klatt@rub.de",
     url="",  # TODO(SK): url missing
     packages=packages,
