@@ -14,8 +14,8 @@ import nest.voltage_trace
 import nest.raster_plot
 import numpy as np
 
-import pamutils.pam2nest
-import pamutils.nest_vis
+import pamutils.pam2nest as pam2nest
+import pamutils.nest_vis as nest_vis
 
 
 EXPORT_PATH = '~/PAM/results/'
