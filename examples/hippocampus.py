@@ -5,7 +5,7 @@ Created on Wed Apr  2 15:32:35 2014
 @author: martin
 """
 
-import pam2nest
+
 import matplotlib.pyplot as mp
 import matplotlib
 
@@ -14,7 +14,8 @@ import nest.voltage_trace
 import nest.raster_plot
 import numpy as np
 
-import nest_vis
+import pamutils.pam2nest
+import pamutils.nest_vis
 
 
 EXPORT_PATH = '~/PAM/results/'
