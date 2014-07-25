@@ -1,2 +1,8 @@
-pam2nest importer module
-========================
+pam-utils module for post-processing of PAM-data
+================================================
+
+To install pam-utils, execute
+
+python setup.py install
+
+
