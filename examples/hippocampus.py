@@ -18,7 +18,7 @@ import pamutils.pam2nest as pam2nest
 import pamutils.nest_vis as nest_vis
 
 
-EXPORT_PATH = '~/PAM/results/'
+EXPORT_PATH = './'
 DELAY_FACTOR = 4.36
 
 
@@ -45,7 +45,7 @@ def analyseNetwork():
     
         
     #mp.show() 
-    weights = [9., 9., 9., 5., 4.0, 5.0, 4.0, 4.0, 4.0]
+    weights = [9., 9., 9., 10., 4.0, 5.0, 4.0, 4.0, 4.0]
     ngs = pam2nest.CreateNetwork(m, 'izhikevich', weights, DELAY_FACTOR)
     
     len(ngs)
@@ -74,6 +74,7 @@ def analyseNetwork():
     ##    nest.voltage_trace.from_device([voltmeter[0]])
     ##    nest.voltage_trace.from_device([voltmeter[1]])
     ##    nest.voltage_trace.show()  
+    
     #    
     nest.raster_plot.from_device(espikes, hist=False)
     nest.raster_plot.show()    
