@@ -45,4 +45,5 @@ ConvergentConnect(ngs[0] + ngs[1] + ngs[2] + ngs[3] + ngs[4] + ngs[5],espikes)
 Simulate(1000.0)
 
 nest.raster_plot.from_device(espikes, hist=False)
+
 nest.raster_plot.show()
