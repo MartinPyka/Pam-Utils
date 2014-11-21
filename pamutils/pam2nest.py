@@ -40,7 +40,7 @@ def Connect(g1, g2, connections, delays, weights, delay_factor):
         Connect(g1, g2, m['c'][0], m['d'][0], 2.0, DELAY_FACTOR)
     """
     for i in range(0, len(connections)):
-        for j in range(0, len(connections[0])):
+        for j in range(0, len(connections[i])):
             # if a synapse has really been created
             if connections[i][j] > 0:
                 nest.Connect([g1[i]], [g2[connections[i][j]]], 
