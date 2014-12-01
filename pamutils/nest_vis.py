@@ -124,7 +124,7 @@ def recursivelyComputeDelays(connections, m, neuron_number):
 def printConnections(m):
     """ Print all connection pairs in m """
     for i, c in enumerate(m['c']):
-        print(m['neurongroups'][0][m['connections'][0][i][1]][0] + ' - ' +
+        print(str(i) + ': ' + m['neurongroups'][0][m['connections'][0][i][1]][0] + ' - ' +
               m['neurongroups'][0][m['connections'][0][i][2]][0])
               
 def printNeuronGroups(m):
