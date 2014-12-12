@@ -129,8 +129,11 @@ def printConnections(m):
               
 def printNeuronGroups(m):
     """ Print all neurongroups """
+    result = []
     for ng in m['neurongroups'][0]:
         print(ng)
+        result.append(ng)
+    return result
               
 def getConnectionMatrix(m, c_index):
     """ Returns the full pre x post-neuron matrix for the connection
