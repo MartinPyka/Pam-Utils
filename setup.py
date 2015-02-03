@@ -29,7 +29,7 @@ setup(
     url="",  # TODO(SK): url missing
     packages=packages,
     package_data={"": ["LICENSE"]},
-    package_dir={"": "pamutils"},
+    package_dir={"": ""},
     include_package_data=True,
     install_requires=requires,
     license="GPL v2",
