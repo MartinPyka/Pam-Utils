@@ -19,15 +19,6 @@ import numpy as np
 
 logger = logging.getLogger(__package__)
 
-""" This value has been obtained from 
-Buzsáki, G., & Mizuseki, K. (2014). The log-dynamic brain: 
-how skewed distributions affect network operations. Nature Reviews. 
-Neuroscience, 15(4), 264–78. doi:10.1038/nrn3687
-...by visually reproducing the distribution of unmyelinated axon calibers in 
-figure 6b lower panel (blue plot) """
-AXON_FAC = 0.2
-
-
 def delayModel_axondiameter_unm(axon_diameter, sd):
     """ Computes the delay per mm from unmyelinated axons based on 
     log-normal distributions
@@ -198,9 +189,6 @@ def CreateNetwork(
         
     return neurongroups        
         
-#def convertToDict(data):
-#    """ converts a given list of neuron groups to a dictionary """
-
 
 def import_connections(filepath):
     matrices = copy.deepcopy(SUPPORTED_SUFFIXES)
