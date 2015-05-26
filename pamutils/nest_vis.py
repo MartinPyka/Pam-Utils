@@ -182,6 +182,6 @@ def permuteConnectionMatrix(matrix, perm_row, perm_col):
     return perm_matrix
 
 def loghist(data):
-    mp.hist(data, bins = 10 ** np.linspace(np.log10(0.01), np.log10(10.), 50))
+    mp.hist(data, bins = 10 ** np.linspace(np.log10(0.01), np.log10(1000.), 50))
     mp.gca().set_xscale("log")
     # loghist(np.random.lognormal(np.log(0.13), 0.7,5000))
