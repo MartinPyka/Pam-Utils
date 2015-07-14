@@ -124,16 +124,13 @@ def Connect(g1, g2, connections, delays,
             if connections[i][j] >= 0:
                 weight = np.random.randn(1)[0] * w_sd + w_mean
                 if w_mean > 0:
-                    weight = max(weight, 0)
+                    weight = max(weight, 0.1)
                 if w_mean < 0:
-                    weight = min(weight, 0)
+                    weight = min(weight, 0.1)
                     
                 # delay = np.random.randn(1)[0] * d_sd + d_mean
                 delay = max(delays[i][j] * delay_mm, 0.1)
-                nest.Connect([g1[i]], [g2[connections[i][j]]], 
-                             params={'weight': np.random.randn(1)[0] * w_sd + w_mean, 
-                                     'delay':  delay},
-                             model=syn_model)
+                nest.Connect([g1[i]], [g2[connections[i][j]]], syn_spec = {'model': syn_model, 'weight': weight, 'delay': delay})
 #                nest.DataConnect([g1[i]], 
 #                                 params=[{'target': [float(g2[connections[i][j]])],
 #                                         'weight': [np.random.randn(1)[0] * w_sd + w_mean], 
