@@ -31,36 +31,47 @@ def axon_diameter_m(axon_diameter):
     # Waxman 1980, Muscle and Nerve. 1 / velocity is the delay for one mm    
     return (axon_diameter * (100./18.))
 
-def delayModel_axondiameter_unm(axon_diameter, sd):
+def delayModel_axondiameter_unm(axon_diameter, sd, number):
     """ Computes the delay per mm from unmyelinated axons based on 
     log-normal distributions
     axon_diameter        : mean axon_diameter (for a lognormal distribution)
     sd                   : standard deviation
     returns the delay in ms per mm 
     """
-    ad = np.random.lognormal(np.log(axon_diameter), sd, 1)[0]
+    if number == 1:
+        ad = np.random.lognormal(np.log(axon_diameter), sd, 1)[0]
+    else:
+        ad = np.random.lognormal(np.log(axon_diameter), sd, number)
+
     return (1. / axon_diameter_unm(ad))
 
-def delayModel_axondiameter_m(axon_diameter, sd):
+def delayModel_axondiameter_m(axon_diameter, sd, number):
     """ Computes the delay per mm from myelinated axons based on 
     log-normal distributions
     axon_diameter        : mean axon_diameter (for a lognormal distribution)
     sd                   : standard deviation
     returns the delay in ms per mm 
     """
-    ad = np.random.lognormal(np.log(axon_diameter), sd, 1)[0]
     # the velocity function mimics the plot of figure 1 for myelinated fibers in
     # Waxman 1980, Muscle and Nerve. 1 / velocity is the delay for one mm
+    if number == 1:
+        ad = np.random.lognormal(np.log(axon_diameter), sd, 1)[0]
+    else:
+        ad = np.random.lognormal(np.log(axon_diameter), sd, number)
+    
     return (1. / axon_diameter_m(ad))
 
-def delayModel_delayDistribLogNormal(delay, sd):
+def delayModel_delayDistribLogNormal(delay, sd, number = 1):
     """ Simple log-normal distribution of delays. Skips the part with the axon
     diameters for simplicity 
     delay                 : mean delay (for a lognormal distribution)
     sd                    : standard deviation
     returns the delay in ms per mm 
     """
-    return np.random.lognormal(np.log(delay), sd, 1)[0]
+    if number == 1:
+        return np.random.lognormal(np.log(delay), sd, number)[0]
+    else:
+        return np.random.lognormal(np.log(delay), sd, number)
 
 def delayModel_delayDistribNormal(delay, sd):
     """ Simple log-normal distribution of delays. Skips the part with the axon
