@@ -24,14 +24,19 @@ def axon_diameter_unm(axon_diameter):
     # Waxman 1980, Muscle and Nerve. 1 / velocity is the delay for one mm
     #y = 2.2*sqrt(d)
     return np.log(axon_diameter * 2 + 1)*2
-    
+
+def axon_diameter_unm_inv(mm_ms):
+    return (np.exp(mm_ms/2.)-1)/2
 
 def axon_diameter_m(axon_diameter):
     # the velocity function mimics the plot of figure 2 for myelinated fibers in
     # Waxman 1980, Muscle and Nerve. 1 / velocity is the delay for one mm    
     return (axon_diameter * (100./18.))
 
-def delayModel_axondiameter_unm(axon_diameter, sd, number):
+def axon_diameter_m_inv(mm_ms):
+    return (mm_ms * (18./100.))
+
+def delayModel_axondiameter_unm(axon_diameter, sd, number=1):
     """ Computes the delay per mm from unmyelinated axons based on 
     log-normal distributions
     axon_diameter        : mean axon_diameter (for a lognormal distribution)
@@ -45,7 +50,7 @@ def delayModel_axondiameter_unm(axon_diameter, sd, number):
 
     return (1. / axon_diameter_unm(ad))
 
-def delayModel_axondiameter_m(axon_diameter, sd, number):
+def delayModel_axondiameter_m(axon_diameter, sd, number=1):
     """ Computes the delay per mm from myelinated axons based on 
     log-normal distributions
     axon_diameter        : mean axon_diameter (for a lognormal distribution)
@@ -73,7 +78,7 @@ def delayModel_delayDistribLogNormal(delay, sd, number = 1):
     else:
         return np.random.lognormal(np.log(delay), sd, number)
 
-def delayModel_delayDistribNormal(delay, sd):
+def delayModel_delayDistribNormal(delay, sd, number=1):
     """ Simple log-normal distribution of delays. Skips the part with the axon
     diameters for simplicity 
     delay                 : mean delay (for a lognormal distribution)
