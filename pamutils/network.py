@@ -31,7 +31,7 @@ STIM_RATE = 100.
 
 class Network(object):
     
-    def __init__(self, filename):
+    def __init__(self, filename, inp_group = 'Post',out_group = 'Pre'):
         self.filename = filename
        
         # the main model
@@ -40,14 +40,7 @@ class Network(object):
 
         print(nest_vis.printConnections(self.m))
         
-        # get index of input group 'EC_2'
-        # self.inputindex = [i for i, j in enumerate(self.neurongroupnames) if j[0] == 'EC_2'][0]
-        # get index of output group 'EC_5'
-        # self.outputindex = [i for i, j in enumerate(self.neurongroupnames) if j[0] == 'EC_5'][0]
-        
-       # try to import the simple FF with a more general in/output indexing. Input and Outputgroup have to be specified
-        inp_group = 'Post'
-        out_group = 'Pre'
+       # get input- and outputindex of two neuron groups
         self.inputindex = [i for i, j in enumerate(self.neurongroupnames) if j[0] == inp_group][0]
         self.outputindex = [i for i, j in enumerate(self.neurongroupnames) if j[0] == out_group][0]
 
@@ -370,51 +363,9 @@ class Network(object):
     def plotLastSim(self):
         self.plotNetwork(self.last_sim_time, self.sim_time)    
         
+        
     def plotNetwork(self, start = 0., end = -1):
-        ''' If end is -1, then end is set to self.sim_time '''
-        if end == -1:
-            end = self.sim_time
-        
-        area_size = 0.5
-
-        mp.figure()
-        mp.subplot(6,1,1)
-        nh.scatter(self.sd_list[3], area=area_size)
-        mp.xlim((start, end))
-        mp.ylabel('EC2')
-        #nest.raster_plot.from_device(sd_EC2, hist=False)
-        mp.subplot(6,1,2)
-        nh.scatter(self.sd_list[4], area=area_size)
-        mp.xlim((start, end))
-        mp.ylabel('EC5')
-        #nest.raster_plot.from_device(sd_EC5, hist=False)
-        mp.subplot(6,1,3)
-        nh.scatter(self.sd_list[2], area=area_size)
-        mp.xlim((start, end))
-        mp.ylabel('DG')
-        #nest.raster_plot.from_device(sd_DG, hist=False)
-        mp.subplot(6,1,4)
-        nh.scatter(self.sd_list[1], area=area_size)
-        mp.xlim((start, end))
-        mp.ylabel('CA3')
-        #nest.raster_plot.from_device(sd_CA3, hist=False)
-        mp.subplot(6,1,5)
-        nh.scatter(self.sd_list[0], area=area_size)
-        mp.xlim((start, end))
-        mp.ylabel('CA1')
-        #nest.raster_plot.from_device(sd_CA1, hist=False)
-        mp.subplot(6,1,6)
-        nh.scatter(self.sd_list[5], area=area_size)
-        mp.xlim((start, end))
-        mp.ylabel('Sub')
-        #nest.raster_plot.from_device(sd_Sub, hist=False)
-        
-        self.getPOA(True, [start, end]);
-   
-   
-    # first try for the general network plot   
-    def generalNetworkPlot(self, start = 0., end = -1):
-        '''Plots network with changeable network size depending on net.m['neurongroups']'''
+        '''Plots network with changeable network size. If end is -1, then end is set to self.sim_time '''
         if end == -1:
             end = self.sim_time
         
@@ -426,7 +377,7 @@ class Network(object):
             mp.xlim((start, end))
             mp.ylabel(self.m['neurongroups'][0][i][0])
             
-        self.genGetPOA(True, [start, end]); # not relevant for the plot (at firts)
+        self.getPOA(True, [start, end]); # not relevant for the plot (at firts)
         
         
     def plotWeightHistogram(self):
@@ -562,31 +513,9 @@ class Network(object):
         ''' executes nest.ResetNetwork() and changes some network-class related
         variables '''
         self.sim_time = 0     
-        
-    def getPOA(self, printit = False, interval=[0, float("inf")]):
-        ''' Get percentage of activity for each network. The order is
-        EC2, EC5, DG, CA3, CA1, Sub '''
-        POA_sEC = nh.getPOA(self.ngs[3], self.sd_list[3], interval)
-        POA_dEC = nh.getPOA(self.ngs[4], self.sd_list[4], interval)
-        POA_DG = nh.getPOA(self.ngs[2], self.sd_list[2], interval)
-        POA_CA3 = nh.getPOA(self.ngs[1], self.sd_list[1], interval)
-        POA_CA1 = nh.getPOA(self.ngs[0], self.sd_list[0], interval)
-        POA_Sub = nh.getPOA(self.ngs[5], self.sd_list[5], interval)
-        
-        if printit:
-            print("sEC: " + str(POA_sEC))
-            print("dEC: " + str(POA_dEC))
-            print("DG: " + str(POA_DG))
-            print("CA3: " + str(POA_CA3))
-            print("CA1: " + str(POA_CA1))
-            print("Sub: " + str(POA_Sub))
-        
-        return [POA_CA1, POA_CA3, POA_DG, POA_sEC, POA_dEC, POA_Sub]
-   
-   
-    # general function to get POA
-    def genGetPOA(self, printit = False, interval = [0, float('inf')]):
-        '''Get percentage of activity for for each network in general'''
+
+    def getPOA(self, printit = False, interval = [0, float('inf')]):
+        '''Get percentage of activity for each network'''
         POA = [nh.getPOA(self.ngs[i], self.sd_list[i], interval = [0,float('inf')]) for i in range(len(self.m['neurongroups'][0]))]
     
         if printit: 
@@ -643,8 +572,8 @@ class Network(object):
             self.simulate(isi_interval)
             
         if plot:
-            # self.plotNetwork(self.sim_time - rep * isi_interval, self.sim_time)
-            self.generalNetworkPlot(self.sim_time - rep * isi_interval, self.sim_time)
+            self.plotNetwork(self.sim_time - rep * isi_interval, self.sim_time)
+
             
     def stimulusCue(self, isi_interval, dur, rep, cue = range(0,25), plot = True):
         ''' Simulates pairing of cue-target stimulation with a given 
@@ -657,8 +586,8 @@ class Network(object):
             self.simulate(isi_interval)
             
         if plot:
-            # self.plotNetwork(self.sim_time - rep * isi_interval, self.sim_time)
-            self.generalNetworkPlot(self.sim_time - rep * isi_interval, self.sim_time)
+            self.plotNetwork(self.sim_time - rep * isi_interval, self.sim_time)
+
 
     def stimulusSGCue(self, isi_interval, rep, cue = range(0, 25), plot = True):
         ''' stimulates the input neurons with a spike generator (all at the 
@@ -668,8 +597,7 @@ class Network(object):
             self.simulate(isi_interval)
         
         if plot:
-            # self.plotNetwork(self.sim_time - rep * isi_interval, self.sim_time)
-            self.generalNetworkPlot(self.sim_time - rep * isi_interval, self.sim_time)
+            self.plotNetwork(self.sim_time - rep * isi_interval, self.sim_time)
     
 
     def getPOAperSegment(self, interval, rep):
