@@ -134,16 +134,7 @@ class Network(object):
             
         #Connect(self.cue, self.ngs[self.inputindex], params={'weight': 2000., 'delay': 1.})
         Connect(self.target, self.ngs[self.outputindex], params={'weight': 2000., 'delay': 1.})
-#        Connect(self.sg_cue, self.ngs[self.inputindex], [2000.], [1.])
-#        Connect(self.sg_target, self.ngs[self.outputindex], [2000.], [1.])
-        
-#    def addNoise(self, i, rate):
-#        ''' Creates noisy input to a target layer, given by index i. rate 
-#        determines the amount of noise generated from poisson generators '''
-#        noise = Create("poisson_generator", len(self.ngs[i]))
-#        SetStatus(noise, [{'start':0., 'stop': float('inf'), 'rate': rate}])
-#        Connect(noise, self.ngs[i], params = {'weight': 2000., 'delay': 1.})
-#        self.noiseLayers.append([noise, i])
+
         
     def addNoise(self, i, rate):
         ''' Creates noisy input to a target layer, given by index i. rate 
@@ -411,41 +402,7 @@ class Network(object):
             mp.title('Time window for joint spike arrival')
         return data
             
-
-    def plotFuncProgressiveOverlap(self, o, n):
-        mp.plot(o, label='overlap')
-        mp.plot(n, label='new spikes')
-        mp.plot(np.array(o) + np.array(n), label='sum')
-        mp.xlabel('Shift of pattern')
-        mp.ylabel('number of spikes')
-        mp.legend(loc="upper right")
-
-    def plotProgressiveOverlap(self, neurons, shift, i):
-        """ Plot the result of progressiveOverlap(). See this method
-        for argument explanations """
-        o, n = self.progressiveOverlap(neurons, shift, i)
-        self.plotFuncProgressiveOverlap(o, n)
-            
-            
-    def progressiveOverlap(self, neurons, shift, i):
-        """ For a given starting sequence, we measure the overlap in region i 
-        (based on spike detector) of spikes that remain, when the pattern is 
-        progressively shifter towards pattern + shift 
-        neurons     : int number of neurons to be activated
-        shift       : number of shifts
-        i           : index for the spike-detector to be used
-        """
-        self.scattDiff = []
-        pattern = np.arange(neurons)
-        oldones = []
-        newones = []
-        for x in range(shift):
-            self.stimulusSGCue(100, 1, pattern + x, False)
-            o, n = self.scatterDiff(i, False)
-            oldones.append(o)
-            newones.append(n)
-        
-        return oldones, newones     
+ 
             
     def scatterSD(self, i, color):
         """ create a scatter plot for a given spikedetector-index 
@@ -820,4 +777,39 @@ class SGNetwork(Network):
         
         if plot:
             self.plotNetwork(self.sim_time - rep * isi_interval, self.sim_time)
-    
+ 
+           
+    def progressiveOverlap(self, neurons, shift, i):
+        """ For a given starting sequence, we measure the overlap in region i 
+        (based on spike detector) of spikes that remain, when the pattern is 
+        progressively shifted towards pattern + shift 
+        neurons     : int number of neurons to be activated
+        shift       : number of shifts
+        i           : index for the spike-detector to be used
+        """
+        self.scattDiff = []
+        pattern = np.arange(neurons)
+        oldones = []
+        newones = []
+        for x in range(shift):
+            self.stimulusCue(100, 1, pattern + x, False)
+            o, n = self.scatterDiff(i, False)
+            oldones.append(o)
+            newones.append(n)
+        
+        return oldones, newones 
+        
+    def plotFuncProgressiveOverlap(self, o, n):
+        mp.figure()
+        mp.plot(o, label='overlap')
+        mp.plot(n, label='new spikes')
+        mp.plot(np.array(o) + np.array(n), label='sum')
+        mp.xlabel('Shift of pattern')
+        mp.ylabel('number of spikes')
+        mp.legend(loc="upper right")
+ 
+    def plotProgressiveOverlap(self, neurons, shift, i):
+        """ Plot the result of progressiveOverlap(). See this method
+        for argument explanations """
+        o, n = self.progressiveOverlap(neurons, shift, i)
+        self.plotFuncProgressiveOverlap(o, n)
