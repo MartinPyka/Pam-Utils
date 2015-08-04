@@ -31,7 +31,7 @@ STIM_RATE = 100.
 
 class Network(object):
     
-    def __init__(self, filename, inp_group = 'Post',out_group = 'Pre'):
+    def __init__(self, filename, inp_group = 'EC_2',out_group = 'EC_5'):
         self.filename = filename
        
         # the main model
@@ -144,13 +144,26 @@ class Network(object):
         Connect(self.sg_cue, self.ngs[self.inputindex], [2000.], [1.])
         Connect(self.sg_target, self.ngs[self.outputindex], [2000.], [1.])
         
+#    def addNoise(self, i, rate):
+#        ''' Creates noisy input to a target layer, given by index i. rate 
+#        determines the amount of noise generated from poisson generators '''
+#        noise = Create("poisson_generator", len(self.ngs[i]))
+#        SetStatus(noise, [{'start':0., 'stop': float('inf'), 'rate': rate}])
+#        Connect(noise, self.ngs[i], params = {'weight': 2000., 'delay': 1.})
+#        self.noiseLayers.append([noise, i])
+        
     def addNoise(self, i, rate):
         ''' Creates noisy input to a target layer, given by index i. rate 
         determines the amount of noise generated from poisson generators '''
-        noise = Create("poisson_generator", len(self.ngs[i]))
-        SetStatus(noise, [{'start':0., 'stop': float('inf'), 'rate': rate}])
-        Connect(noise, self.ngs[i], params = {'weight': 2000., 'delay': 1.})
-        self.noiseLayers.append([noise, i])
+        try:
+            noise = Create("poisson_generator", len(self.ngs[i]))
+            SetStatus(noise, [{'start':0., 'stop': float('inf'), 'rate': rate}])
+            Connect(noise, self.ngs[i], params = {'weight': 2000., 'delay': 1.})
+            self.noiseLayers.append([noise, i])
+        except IndexError:
+            print 'Warning: No noise added. Index of target layer (i) out of range'           
+
+            
 
     def genaddNoise(self, rate):
         ''' Creates noisy input to a target layer, given by the layer chosen as inputindex. rate 
@@ -936,3 +949,114 @@ class AbstractNetwork(Network):
         weights[weights < 0.1] = 0.1
         nest.SetStatus(connections, 'weight', weights)
         
+        
+class SGNetwork(Network):
+     
+    def _init_(self):
+        
+       # neuron groups
+        self.ngs = []
+        
+        self.cue           = []
+        self.target           = []
+        self.stimulus_list   = []   # list of stimuli-onsets and durations for
+                                    # self.noise        
+        
+        self.dc_1            = []
+        
+        self.voltmeter       = []
+        # spike detectors
+        self.sd_list         = [] # list with spike-detectors
+        
+        self.sim_time        = 0.   # simulation time
+        self.last_sim_time   = 0.   # last duration, when self.simulate was called  
+        
+        # list of connection weight matrices that should be recorded
+        self.tracking        = []
+        # list of recorded weight matrices
+        self.track_weights   = []
+        
+        # data structure to store the last spiking-activity to compare with
+        # the next one
+        self.scattDiff      = [] 
+        self.adjustLog      = []    # logs what is happening during adjustWeights()
+        
+        self.inhLayers      = []    # collection of inhibition layers
+        self.noiseLayers    = []    # collection of noise inputs
+        
+             
+    def initialize(self):
+        """ initializes the network based on the specified input given in 
+        self.createNetwork()
+        """
+        self.ngs = pam2nest.CreateNetwork(
+            self.m, self.neuron_model,
+            self.w_means, self.w_sds, 
+            self.d_means, self.d_sds,
+            self.syn_model,
+            distrib = self.distrib,
+            connectModel = self.connectModel,
+            delayfile_prefix = self.output_prefix)
+
+
+        self.inputs = []
+        for ng in self.neurongroupnames:
+            self.inputs.append(Create("poisson_generator", ng[2]))
+        
+        self.cue = Create("spike_generator", 
+                             self.neurongroupnames[self.inputindex][2], 
+                             params = {'spike_times': [1.]})
+        self.target = Create("spike_generator", 
+                                self.neurongroupnames[self.outputindex][2], 
+                                params = {'spike_times': [1.]})
+        
+        self.dc_1            = nest.Create('dc_generator')
+        
+        self.voltmeter       = Create("voltmeter", len(self.ngs[0]))
+        #Connect(self.voltmeter, self.ngs[0])
+        
+        # create for each ng a spike-detector
+        for ng in self.ngs:
+            sd = Create("spike_detector")
+            self.sd_list.append(sd)
+            ConvergentConnect(ng, sd)
+            
+        for i, ng in enumerate(self.ngs):
+            Connect(self.inputs[i], ng, params={'weight':2000., 'delay': 1.})
+            
+        #Connect(self.cue, self.ngs[self.inputindex], params={'weight': 2000., 'delay': 1.})
+        Connect(self.cue, self.ngs[self.inputindex], [2000.], [1.])
+        Connect(self.target, self.ngs[self.outputindex], [2000.], [1.])  
+        
+    def setCue(self, start, neurons):
+        if len(neurons) == 1:
+            cue = [self.cue[neurons]]
+        else:
+            cue = [self.cue[i] for i in neurons]
+        SetStatus(cue, [{'spike_times': [start+1]}])
+        
+    def setTarget(self, start, neurons):
+        if len(neurons) == 1:
+            target = [self.target[neurons]]
+        else:
+            target = [self.target[i] for i in neurons]
+        SetStatus(target, [{'spike_times': [start+1]}])
+                
+    def stimulusCueTarget(self, isi_interval, c_t_interval, rep, cue = range(0,25), target = range(0,25)):
+        ''' stimulates the input neurons with a spike generator (all at the 
+        same time)'''
+        for i in range(0, rep):
+            self.setCue(start = self.sim_time, neurons = cue)
+            self.setTarget(start = self.sim_time+c_t_interval, neurons = target)
+            self.simulate(isi_interval)            
+            
+    def stimulusCue(self, isi_interval, rep, cue = range(0, 25), plot = True):
+        ''' stimulates the input neurons with a spike generator (all at the 
+        same time) '''
+        for i in range(0, rep):
+            self.setCue(start = self.sim_time, neurons = cue)
+            self.simulate(isi_interval)
+        
+        if plot:
+            self.plotNetwork(self.sim_time - rep * isi_interval, self.sim_time)
+    
