@@ -118,13 +118,6 @@ class Network(object):
         self.target          = Create("poisson_generator",
                                       self.neurongroupnames[self.outputindex][2])
         
-        self.sg_cue = Create("spike_generator", 
-                             self.neurongroupnames[self.inputindex][2], 
-                             params = {'spike_times': [1.]})
-        self.sg_target = Create("spike_generator", 
-                                self.neurongroupnames[self.outputindex][2], 
-                                params = {'spike_times': [1.]})
-        
         self.dc_1            = nest.Create('dc_generator')
         
         self.voltmeter       = Create("voltmeter", len(self.ngs[0]))
@@ -141,8 +134,8 @@ class Network(object):
             
         #Connect(self.cue, self.ngs[self.inputindex], params={'weight': 2000., 'delay': 1.})
         Connect(self.target, self.ngs[self.outputindex], params={'weight': 2000., 'delay': 1.})
-        Connect(self.sg_cue, self.ngs[self.inputindex], [2000.], [1.])
-        Connect(self.sg_target, self.ngs[self.outputindex], [2000.], [1.])
+#        Connect(self.sg_cue, self.ngs[self.inputindex], [2000.], [1.])
+#        Connect(self.sg_target, self.ngs[self.outputindex], [2000.], [1.])
         
 #    def addNoise(self, i, rate):
 #        ''' Creates noisy input to a target layer, given by index i. rate 
@@ -161,18 +154,7 @@ class Network(object):
             Connect(noise, self.ngs[i], params = {'weight': 2000., 'delay': 1.})
             self.noiseLayers.append([noise, i])
         except IndexError:
-            print 'Warning: No noise added. Index of target layer (i) out of range'           
-
-            
-
-    def genaddNoise(self, rate):
-        ''' Creates noisy input to a target layer, given by the layer chosen as inputindex. rate 
-        determines the amount of noise generated from poisson generators '''
-        noise = Create("poisson_generator", len(self.ngs[self.inputindex]))
-        SetStatus(noise, [{'start':0., 'stop': float('inf'), 'rate': rate}])
-        Connect(noise, self.ngs[self.inputindex], params = {'weight': 2000., 'delay': 1.})
-        self.noiseLayers.append([noise, self.inputindex])
-
+            print( 'Warning: No noise added. Index of target layer (i) out of range' )          
 
        
     def addInhibitionLayer(self, i, percent, 
@@ -248,21 +230,6 @@ class Network(object):
             cue = [self.cue[i] for i in neurons]
         self.stimulus_list.append([cue, start, stop, rate])
         SetStatus(cue, [{'start':start, 'stop': stop, 'rate': rate}])
-        
-        
-    def setSGCue(self, start, neurons):
-        if len(neurons) == 1:
-            cue = [self.sg_cue[neurons]]
-        else:
-            cue = [self.sg_cue[i] for i in neurons]
-        SetStatus(cue, [{'spike_times': [start+1]}])
-        
-    def setSGTarget(self, start, neurons):
-        if len(neurons) == 1:
-            target = [self.sg_target[neurons]]
-        else:
-            target = [self.sg_target[i] for i in neurons]
-        SetStatus(target, [{'spike_times': [start+1]}])
     
     def setTarget(self, neurons, start, stop, rate=100.):
         ''' Sets start and stop-points for target-pattern '''
@@ -566,13 +533,6 @@ class Network(object):
             self.setTarget(target, start = self.sim_time+c_t_interval, stop= self.sim_time+c_t_interval+10)
             self.simulate(c_t_interval + isi_interval)
             
-    def stimulusSGCueTarget(self, isi_interval, c_t_interval, rep, cue = range(0,25), target = range(0,25)):
-        ''' stimulates the input neurons with a spike generator (all at the 
-        same time '''
-        for i in range(0, rep):
-            self.setSGCue(start = self.sim_time, neurons = cue)
-            self.setSGTarget(start = self.sim_time+c_t_interval, neurons = target)
-            self.simulate(isi_interval)            
             
     def stimulus(self, isi_interval, dur, rep, area, cue = range(0,25), plot = True):
         ''' stimulates neurons in a given area
@@ -598,17 +558,6 @@ class Network(object):
             self.setCue(cue, start = self.sim_time, stop= self.sim_time + dur)
             self.simulate(isi_interval)
             
-        if plot:
-            self.plotNetwork(self.sim_time - rep * isi_interval, self.sim_time)
-
-
-    def stimulusSGCue(self, isi_interval, rep, cue = range(0, 25), plot = True):
-        ''' stimulates the input neurons with a spike generator (all at the 
-        same time '''
-        for i in range(0, rep):
-            self.setSGCue(start = self.sim_time, neurons = cue)
-            self.simulate(isi_interval)
-        
         if plot:
             self.plotNetwork(self.sim_time - rep * isi_interval, self.sim_time)
     
@@ -792,198 +741,10 @@ class Network(object):
     def existConnection(self, i, pre, post):
         return len(np.where(np.array(self.m['c'][i][pre]) == post)[0]) > 0
                      
-
-
-class AbstractNetwork(Network):
-    
-    def __init__(self):
-        # neuron groups
-        self.ngs = []
-        
-        self.cue           = []
-        self.target           = []
-        self.stimulus_list   = []  # list of stimuli-onsets and durations for
-                                   # self.noise        
-        
-        self.dc_1            = []
-        
-        self.voltmeter       = []
-        # spike detectors
-        self.sd_list         = [] # list with spike-detectors
-        
-        self.sim_time        = 0.   # simulation time
-        self.last_sim_time   = 0.   # last duration, when self.simulate was called  
-        
-        # list of connection weight matrices that should be recorded
-        self.tracking        = []
-        # list of recorded weight matrices
-        self.track_weights   = []
-        
-        # data structure to store the last spiking-activity to compare with
-        # the next one
-        self.scattDiff      = [] 
-        
-    def createNetwork(self, neuron_model = 'iaf_psc_delta'):
-        """ Creates a network for a given model and vectors of weights and
-        delays plus their standard deviations """
-        self.neuron_model = neuron_model
-        self.initialize()        
-    
-    def initialize(self):
-        """ initializes the network based on the specified input given in 
-        self.createNetwork()
-        """
-        def_n = 100        
-        self.ngs.append(Create(self.neuron_model, def_n))   # 0: EC 2
-        self.ngs.append(Create(self.neuron_model, def_n))   # 1: DG
-        self.ngs.append(Create(self.neuron_model, def_n))   # 2: CA3
-        self.ngs.append(Create(self.neuron_model, def_n))   # 3: CA1
-        self.ngs.append(Create(self.neuron_model, def_n))   # 4: EC 5
-        
-        self.randomConnect(self.ngs[0], self.ngs[1], 0.5, 0.5, 1.)
-        self.randomConnect(self.ngs[1], self.ngs[2], 0.5, 0.5, 1.)
-        self.randomConnect(self.ngs[2], self.ngs[3], 0.5, 0.5, 1.)
-        self.connect(self.ngs[0], self.ngs[3], 8., 3.)
-
-        self.cue             = Create("poisson_generator", def_n)
-        self.target          = Create("poisson_generator", def_n)
-        
-        self.sg_cue          = Create("spike_generator", def_n, 
-                                      params = {'spike_times': [0.]})
-        self.sg_target       = Create("spike_generator", def_n, 
-                                      params = {'spike_times': [0.]})
-        
-        self.dc_1            = nest.Create('dc_generator')
-        
-        self.voltmeter       = Create("voltmeter", len(self.ngs[3]))
-        Connect(self.voltmeter, self.ngs[3])
-        
-        # create for each ng a spike-detector
-        for ng in self.ngs:
-            sd = Create("spike_detector")
-            self.sd_list.append(sd)
-            ConvergentConnect(ng, sd)
-            
-        Connect(self.cue, self.ngs[0], params={'weight': 2000., 'delay': 1.})
-        Connect(self.target, self.ngs[4], params={'weight': 2000., 'delay': 1.})
-        Connect(self.sg_cue, self.ngs[0], [2000.], [1.])
-        Connect(self.sg_target, self.ngs[4], [2000.], [1.])
-        
-    def randomConnect(self, ng1, ng2, w_mean, w_sd, delay, syn_model='static_synapse'):
-        for n1 in ng1:
-            for n2 in ng2:
-                nest.Connect([n1], [n2],
-                             params={'weight': np.random.randn(1)[0]*w_sd + w_mean,
-                                     'delay': delay},
-                             model=syn_model)
-
-    def divergentConnect(self, ng1, ng2, w_mean, w_sd, syn_model='static_synapse'):
-        weights = np.random.randn(len(ng1)) * w_sd + w_mean
-        weights[weights < 0.1] = 0.1
-        nest.DivergentConnect(ng1, ng2, 
-                              weight = weights.tolist(),
-                              delay = np.ones(len(ng1)).tolist(),
-                              model=syn_model)
-    
-    def connect(self, ng1, ng2, w_mean, delay, syn_model='static_synapse'):
-        nest.Connect(ng1, ng2, 
-                     params={'weight': w_mean, 
-                             'delay':  delay},
-                     model=syn_model)
-        
-    def plotNetwork(self, start = 0., end = -1):
-        ''' If end is -1, then end is set to self.sim_time '''
-        if end == -1:
-            end = self.sim_time
-        
-        area_size = 0.5
-
-        mp.figure()
-        mp.subplot(5,1,1)
-        nh.scatter(self.sd_list[0], area=area_size)
-        mp.xlim((start, end))
-        mp.title('Network activity')
-        #nest.raster_plot.from_device(sd_EC2, hist=False)
-        mp.subplot(5,1,2)
-        nh.scatter(self.sd_list[1], area=area_size)
-        mp.xlim((start, end))
-        #nest.raster_plot.from_device(sd_EC5, hist=False)
-        mp.subplot(5,1,3)
-        nh.scatter(self.sd_list[2], area=area_size)
-        mp.xlim((start, end))
-        #nest.raster_plot.from_device(sd_DG, hist=False)
-        mp.subplot(5,1,4)
-        nh.scatter(self.sd_list[3], area=area_size)
-        mp.xlim((start, end))
-        #nest.raster_plot.from_device(sd_CA3, hist=False)
-        mp.subplot(5,1,5)
-        nh.scatter(self.sd_list[4], area=area_size)
-        mp.xlim((start, end))
-        mp.xlabel('ms')
-        
-        
-    def getPOA(self, printit = False, interval=[0, float("inf")]):
-        ''' Get percentage of activity for each network. The order is
-        EC2, EC5, DG, CA3, CA1, Sub '''
-        POA_EC2 = nh.getPOA(self.ngs[0], self.sd_list[0], interval)
-        POA_DG = nh.getPOA(self.ngs[1], self.sd_list[1], interval)
-        POA_CA3 = nh.getPOA(self.ngs[2], self.sd_list[2], interval)
-        POA_CA1 = nh.getPOA(self.ngs[3], self.sd_list[3], interval)
-        POA_EC5 = nh.getPOA(self.ngs[4], self.sd_list[4], interval)
-        
-        if printit:
-            print("EC2: " + str(POA_EC2))
-            print("DG: " + str(POA_DG))
-            print("CA3: " + str(POA_CA3))
-            print("CA1: " + str(POA_CA1))
-            print("EC5: " + str(POA_EC5))
-
-        
-        return [POA_EC2, POA_DG, POA_CA3, POA_CA1, POA_EC5]
-
-    def setWeights(self, pre_ngs, post_ngs, w_mean, w_sd = 1.0):
-        ''' Resets the weights for a connection c given the mean and 
-        sd values for the new weights '''
-        connections = nest.GetConnections(pre_ngs, post_ngs)
-        weights = np.random.randn(len(connections)) * w_sd + w_mean
-        weights[weights < 0.1] = 0.1
-        nest.SetStatus(connections, 'weight', weights)
         
         
 class SGNetwork(Network):
-     
-    def _init_(self):
-        
-       # neuron groups
-        self.ngs = []
-        
-        self.cue           = []
-        self.target           = []
-        self.stimulus_list   = []   # list of stimuli-onsets and durations for
-                                    # self.noise        
-        
-        self.dc_1            = []
-        
-        self.voltmeter       = []
-        # spike detectors
-        self.sd_list         = [] # list with spike-detectors
-        
-        self.sim_time        = 0.   # simulation time
-        self.last_sim_time   = 0.   # last duration, when self.simulate was called  
-        
-        # list of connection weight matrices that should be recorded
-        self.tracking        = []
-        # list of recorded weight matrices
-        self.track_weights   = []
-        
-        # data structure to store the last spiking-activity to compare with
-        # the next one
-        self.scattDiff      = [] 
-        self.adjustLog      = []    # logs what is happening during adjustWeights()
-        
-        self.inhLayers      = []    # collection of inhibition layers
-        self.noiseLayers    = []    # collection of noise inputs
-        
+            
              
     def initialize(self):
         """ initializes the network based on the specified input given in 
@@ -1001,7 +762,7 @@ class SGNetwork(Network):
 
         self.inputs = []
         for ng in self.neurongroupnames:
-            self.inputs.append(Create("poisson_generator", ng[2]))
+            self.inputs.append(Create("spike_generator", ng[2]))
         
         self.cue = Create("spike_generator", 
                              self.neurongroupnames[self.inputindex][2], 
