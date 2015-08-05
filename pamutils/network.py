@@ -324,7 +324,6 @@ class Network(object):
     def plotDelays(self, c):
         ''' plot delays as histogram for one connection (c)'''
         d = self.getConnInfo(c, info = 'delay')
-        # hist(SGnet.getConnInfo(0, 'delay'), 40) [d>0]
         mp.hist(d, 50, range=(0., 10.))
         mp.title(self.m['neurongroups'][0][self.m['connections'][0][c][1]][0] + ' - ' +
                  self.m['neurongroups'][0][self.m['connections'][0][c][2]][0])
@@ -346,7 +345,7 @@ class Network(object):
             mp.xlim((start, end))
             mp.ylabel(self.m['neurongroups'][0][i][0])
             
-        self.getPOA(True, [start, end]); # not relevant for the plot (at firts)
+        self.getPOA(True, [start, end]); 
         
         
     def plotWeightHistogram(self):
