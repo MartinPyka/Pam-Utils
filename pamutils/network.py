@@ -30,6 +30,7 @@ STIM_RATE = 100.
 
 
 class Network(object):
+
     
     def __init__(self, filename, inp_group = 'Pre',out_group = 'Post'):
         self.filename = filename
@@ -332,11 +333,12 @@ class Network(object):
                  self.m['neurongroups'][0][self.m['connections'][0][c][2]][0])
         
     def plotLastSim(self):
+        """Plots last simulation"""
         self.plotNetwork(self.last_sim_time, self.sim_time)    
         
         
     def plotNetwork(self, start = 0., end = -1):
-        '''Plots network with changeable network size. If end is -1, then end is set to self.sim_time '''
+        '''Plots network with independant of network size. If end is -1, then end is set to self.sim_time '''
         if end == -1:
             end = self.sim_time
         
@@ -389,6 +391,7 @@ class Network(object):
         mp.scatter(t-self.last_sim_time, s, c=color)
         
     def scatterDiff(self, i, plot = True):
+        
         s, t = nh.getEventsFromSpikeDetector(self.sd_list[i], [self.last_sim_time, 
                                                                self.sim_time])
         data = np.array([np.floor(t-self.last_sim_time).astype(int), s])
@@ -469,7 +472,6 @@ class Network(object):
     def stimulus(self, isi_interval, dur, rep, area, cue = range(0,25), plot = True):
         ''' stimulates neurons in a given area
         isi_interval         : interstimulus-interval in ms
-        c_t_interval         : cue-target-interval in ms
         rep                  : number of repetitions
         '''
         for i in range(0, rep):
@@ -483,7 +485,6 @@ class Network(object):
     def stimulusCue(self, isi_interval, dur, rep, cue = range(0,25), plot = True):
         ''' Simulates pairing of cue-target stimulation with a given 
         isi_interval         : interstimulus-interval in ms
-        c_t_interval         : cue-target-interval in ms
         rep                  : number of repetitions
         '''
         for i in range(0, rep):
@@ -588,6 +589,7 @@ class Network(object):
         return np.array(data)    
     
     def getSpikeHistogram(self, bins, plot=True, stretch = 3):
+        """Creates a histogram of spikes""" 
         data = []
         for o in self.order:
             s, t = nh.getEventsFromSpikeDetector(self.sd_list[o], t_range=[self.last_sim_time,
@@ -595,25 +597,30 @@ class Network(object):
             for _ in range(stretch):
                 data.append(np.histogram(t, bins, range = [self.last_sim_time, self.sim_time])[0])
     
-        if plot:             
+        if plot:
+            mp.figure()             
             mp.imshow(data, vmin = 0, vmax = 50, interpolation='none')
             mp.title('Temporal spike evolution')
             mp.xlabel('ms')        
         return np.array(data)
+        
     
     def getSpikeHistogramRange(self, bins, time_range, plot=True, stretch = 3):
+        """ Get histogram of spikes for a given time_range [x,y]"""
         data = []
         for o in self.order:
             s, t = nh.getEventsFromSpikeDetector(self.sd_list[o], t_range=time_range)
             for _ in range(stretch):
                 data.append(np.histogram(t, bins, range = time_range)[0])
     
-        if plot:             
+        if plot: 
+            mp.figure()            
             mp.imshow(data, vmin = 0, vmax = 50, interpolation='none')
             mp.title('Temporal spike evolution')
             mp.xlabel('ms')        
         return np.array(data)
-    
+
+ 
     def stimulusCueHistogram(self, isi_interval, duration, rep, bins, neurons, area = -1 ):
         """ Computes a histogram for a given cue pattern based on several 
         repetitions """
@@ -673,6 +680,7 @@ class Network(object):
         
         
 class SGNetwork(Network):
+
             
              
     def initialize(self):
@@ -731,7 +739,11 @@ class SGNetwork(Network):
                 
     def stimulusCueTarget(self, isi_interval, c_t_interval, rep, cue = range(0,25), target = range(0,25)):
         ''' stimulates the input neurons with a spike generator (all at the 
-        same time)'''
+        same time)
+        isi_interval : inter-stimulus-interval
+        c_t_interval : cue-target-interval
+        rep          : repetitions
+        '''
         for i in range(0, rep):
             self.setCue(start = self.sim_time, neurons = cue)
             self.setTarget(start = self.sim_time+c_t_interval, neurons = target)
@@ -739,7 +751,10 @@ class SGNetwork(Network):
             
     def stimulusCue(self, isi_interval, rep, cue = range(0, 25), plot = True):
         ''' stimulates the input neurons with a spike generator (all at the 
-        same time) '''
+        same time)
+        isi_interval : inter-stimulus-interval
+        rep          : repetitions
+        '''
         for i in range(0, rep):
             self.setCue(start = self.sim_time, neurons = cue)
             self.simulate(isi_interval)
@@ -782,3 +797,73 @@ class SGNetwork(Network):
         for argument explanations """
         o, n = self.progressiveOverlap(neurons, shift, i)
         self.plotFuncProgressiveOverlap(o, n)
+        
+    
+    def getSpikeHistogram(self, bins, plot=True, stretch = 3):
+        """Creates a histogram of spikes with bins as ms""" 
+        data = []
+        for o in self.order:
+            s, t = nh.getEventsFromSpikeDetector(self.sd_list[o], t_range=[self.last_sim_time,
+                                                                           self.sim_time])
+            for _ in range(stretch):
+                data.append(np.histogram(t, bins, range = [self.last_sim_time, self.sim_time])[0])
+    
+        if plot:
+            mp.figure()             
+            mp.imshow(data, vmin = 0, vmax = 50, interpolation='none')
+            mp.title('Temporal spike evolution')
+            mp.xlabel('ms')        
+        return np.array(data)
+        
+    def stimulusCueHistogram(self, isi_interval, rep, bins, neurons, area = -1 ):
+        """ Computes a histogram for a given cue pattern based on several 
+        repetitions """
+        if area == -1:
+            area = self.inputindex
+            
+        data = []
+        for i in range(rep):
+            self.stimulus(isi_interval, 1, area, neurons, plot = False)
+            hist_data = np.array(self.getSpikeHistogram(bins, plot = False, stretch = 1))
+            if (i==0):
+                data = hist_data
+            else:
+                data = data + hist_data
+        return data
+    
+    def sampleSpikeHistogram(self, plot=True, title='Temporal spike evolution', rep = 5):
+        """Computes a network simulation with inter-stimulus-interval 70ms and creates a spike histogram"""
+        data = []
+    
+        isi_interval = 70
+        
+        stimuli_size = [25]
+        sp = len(stimuli_size)
+        stretch = 1
+        fac = 1.        # factor to reduce the time span for the histogram
+        
+        for i, stimulus in enumerate(stimuli_size):
+            mp.subplot(sp, 1, i+1)
+            data = np.zeros((len(self.m['neurongroups'][0])*stretch,isi_interval/fac))
+            for _ in range(rep):
+                self.stimulusCue(isi_interval, 1, np.arange(stimulus), False)
+                data = data + self.getSpikeHistogram(isi_interval/fac, False, stretch)
+            
+            mp.imshow(data / rep, vmin = 0, vmax = stimulus, interpolation='none')
+            #mp.colorbar()
+            if (i == 0):
+                mp.title(title)
+    
+            mp.ylabel('Region')
+        
+        mp.xlabel('ms')
+        
+    def sampleOnsetLatency(self, title='Onset latency', rep = 10, spike_take = 4):
+        isi_interval = 150
+        
+        data = []
+        for _ in range(rep):
+            self.stimulusCue(isi_interval, 1, plot = False)
+            data.append(self.getSpikeOnsetTimes(spike_take = spike_take) - self.last_sim_time)     
+        return data
+        
