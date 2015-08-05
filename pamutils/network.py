@@ -53,8 +53,7 @@ class Network(object):
                                     # self.noise        
         
         self.dc_1            = []
-        
-        self.voltmeter       = []
+
         # spike detectors
         self.sd_list         = [] # list with spike-detectors
         
@@ -120,9 +119,7 @@ class Network(object):
         
         self.dc_1            = nest.Create('dc_generator')
         
-        self.voltmeter       = Create("voltmeter", len(self.ngs[0]))
-        #Connect(self.voltmeter, self.ngs[0])
-        
+               
         # create for each ng a spike-detector
         for ng in self.ngs:
             sd = Create("spike_detector")
@@ -380,31 +377,7 @@ class Network(object):
             mp.subplot(len(evo), 1, (i+1))
             mp.plot(d)
             
-    def plotVoltage(self):
-        #s, t = nh.getEventsFromSpikeDetector(self.sd_list[3])
-        #su = np.unique(s)
-        mp.figure()
-        for i in self.voltmeter:
-            print(i)
-            nest.voltage_trace.from_device([i])
-            
-    def plotVoltageAverage(self, plot=True):
-        mp.figure()
-        status = nest.GetStatus(self.voltmeter)
-        data = status[0]['events']['V_m']
-        for s in status[1:]:
-            data = data + s['events']['V_m']
-        
-        data = data / len(status)
-        if plot:
-            mp.plot(data)
-            mp.xlabel('ms')
-            mp.ylabel('average voltage')
-            mp.title('Time window for joint spike arrival')
-        return data
-            
- 
-            
+
     def scatterSD(self, i, color):
         """ create a scatter plot for a given spikedetector-index 
         for the last simulation. color refers to the color-code """
@@ -731,9 +704,6 @@ class SGNetwork(Network):
                                 params = {'spike_times': [1.]})
         
         self.dc_1            = nest.Create('dc_generator')
-        
-        self.voltmeter       = Create("voltmeter", len(self.ngs[0]))
-        #Connect(self.voltmeter, self.ngs[0])
         
         # create for each ng a spike-detector
         for ng in self.ngs:
