@@ -47,6 +47,9 @@ class Network(object):
        # neuron groups
         self.ngs = []
         
+       # order of neuron groups (can be changed into desired order)
+        self.order = [i for i,j in enumerate(self.neurongroupnames)]        
+        
         self.cue           = []
         self.target           = []
         self.stimulus_list   = []   # list of stimuli-onsets and durations for
@@ -432,7 +435,7 @@ class Network(object):
         if printit: 
             for i in range(len(POA)):
                 print(self.m['neurongroups'][0][i][0] + " " + str(POA[i]))
-        return POA  # nach Ende der Funktion nicht aufrubar?
+        return POA 
     
     def exportSpikes(self, filename):
         """ Exports data from a list of spike detector ids into a given file
@@ -443,10 +446,8 @@ class Network(object):
             delimiter=";",
             quoting=csv.QUOTE_NONNUMERIC
         )
-        
-        sd_list = [self.sd_CA1, self.sd_CA3, self.sd_DG, self.sd_EC2, self.sd_EC5, self.sd_Sub]
-        
-        for index, sd in enumerate(sd_list):
+
+        for index, sd in enumerate(self.sd_list):
             sender, times = nh.getEventsFromSpikeDetector(sd)
             for i in range(len(sender)):
                 writer.writerow([index, sender[i] - self.ngs[index][0], times[i]])
@@ -576,9 +577,8 @@ class Network(object):
         """ returns the occurence of the first spike in each area for the last
         simulation
         """
-        order = [3, 4, 2, 1, 0, 5]
         data = []
-        for o in order:
+        for o in self.order:
             s, t = nh.getEventsFromSpikeDetector(self.sd_list[o], t_range=[self.last_sim_time,
                                                                            self.sim_time])
             if len(t) >= spike_take:
@@ -588,9 +588,8 @@ class Network(object):
         return np.array(data)    
     
     def getSpikeHistogram(self, bins, plot=True, stretch = 3):
-        order = [3, 4, 2, 1, 0, 5]
         data = []
-        for o in order:
+        for o in self.order:
             s, t = nh.getEventsFromSpikeDetector(self.sd_list[o], t_range=[self.last_sim_time,
                                                                            self.sim_time])
             for _ in range(stretch):
@@ -603,9 +602,8 @@ class Network(object):
         return np.array(data)
     
     def getSpikeHistogramRange(self, bins, time_range, plot=True, stretch = 3):
-        order = [3, 4, 2, 1, 0, 5]
         data = []
-        for o in order:
+        for o in self.order:
             s, t = nh.getEventsFromSpikeDetector(self.sd_list[o], t_range=time_range)
             for _ in range(stretch):
                 data.append(np.histogram(t, bins, range = time_range)[0])
