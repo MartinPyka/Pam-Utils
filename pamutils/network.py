@@ -31,7 +31,7 @@ STIM_RATE = 100.
 
 class Network(object):
     
-    def __init__(self, filename, inp_group = 'EC_2',out_group = 'EC_5'):
+    def __init__(self, filename, inp_group = 'Pre',out_group = 'Post'):
         self.filename = filename
        
         # the main model
@@ -324,12 +324,13 @@ class Network(object):
         connections = nest.GetConnections(su.tolist(), self.ngs[post][target[0]:target[1]])
         nest.SetStatus(connections, 'weight', weights)    
     
-    def plotDelays(self, index):
-        ''' plot delays as histogram for one connection given by index '''
-        d = self.getDelays(index )
-        mp.hist(d[d>0], 50, range=(0., 10.))
-        mp.title(self.m['neurongroups'][0][self.m['connections'][0][index][1]][0] + ' - ' +
-                 self.m['neurongroups'][0][self.m['connections'][0][index][2]][0])
+    def plotDelays(self, c):
+        ''' plot delays as histogram for one connection (c)'''
+        d = self.getConnInfo(c, info = 'delay')
+        # hist(SGnet.getConnInfo(0, 'delay'), 40) [d>0]
+        mp.hist(d, 50, range=(0., 10.))
+        mp.title(self.m['neurongroups'][0][self.m['connections'][0][c][1]][0] + ' - ' +
+                 self.m['neurongroups'][0][self.m['connections'][0][c][2]][0])
         
     def plotLastSim(self):
         self.plotNetwork(self.last_sim_time, self.sim_time)    
@@ -409,6 +410,7 @@ class Network(object):
         for the last simulation. color refers to the color-code """
         s, t = nh.getEventsFromSpikeDetector(self.sd_list[i], [self.last_sim_time, 
                                                                self.sim_time])
+        mp.figure()
         mp.scatter(t-self.last_sim_time, s, c=color)
         
     def scatterDiff(self, i, plot = True):
