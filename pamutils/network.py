@@ -32,7 +32,7 @@ STIM_RATE = 100.
 class Network(object):
 
     
-    def __init__(self, filename, inp_group = 'Pre',out_group = 'Post'):
+    def __init__(self, filename, inp_group = 'EC_2',out_group = 'EC_5'):
         self.filename = filename
        
         # the main model
@@ -619,9 +619,29 @@ class Network(object):
             mp.title('Temporal spike evolution')
             mp.xlabel('ms')        
         return np.array(data)
-
+        
+        
+#
+# 
+#    def stimulusCueHistogram(self, isi_interval, duration, rep, bins, neurons, area = -1 ):
+#        """ Computes a histogram for a given cue pattern based on several 
+#        repetitions """
+#        if area == -1:
+#            area = self.inputindex
+#            
+#        data = []
+#        for i in range(rep):
+#            self.stimulus(isi_interval, duration, 1, area, neurons, False)
+#            hist_data = np.array(self.getSpikeHistogram(bins, plot = False, stretch = 1))
+#            if (i==0):
+#                data = hist_data
+#            else:
+#                data = data + hist_data
+#        return data
+    
+    
  
-    def stimulusCueHistogram(self, isi_interval, duration, rep, bins, neurons, area = -1 ):
+    def stimulusCueHistogram(self, isi_interval, duration, rep, bins, area = -1 ):
         """ Computes a histogram for a given cue pattern based on several 
         repetitions """
         if area == -1:
@@ -629,14 +649,17 @@ class Network(object):
             
         data = []
         for i in range(rep):
-            self.stimulus(isi_interval, duration, 1, area, neurons, False)
+            self.stimulus(isi_interval, duration, rep, area, plot = False)
             hist_data = np.array(self.getSpikeHistogram(bins, plot = False, stretch = 1))
             if (i==0):
                 data = hist_data
             else:
                 data = data + hist_data
         return data
-    
+        
+        
+        
+        
     def sampleSpikeHistogram(self, plot=True, title='Temporal spike evolution', rep = 5):
         data = []
     
@@ -815,7 +838,26 @@ class SGNetwork(Network):
             mp.xlabel('ms')        
         return np.array(data)
         
-    def stimulusCueHistogram(self, isi_interval, rep, bins, neurons, area = -1 ):
+   
+#    # does not work yet...     
+#    def stimulusCueHistogram(self, isi_interval, duration, rep, bins, neurons, area = -1 ):
+#        """ Computes a histogram for a given cue pattern based on several 
+#        repetitions """
+#        if area == -1:
+#            area = self.inputindex
+#            
+#        data = []
+#        for i in range(rep):
+#            self.stimulus(isi_interval, duration, area, neurons, False)
+#            hist_data = np.array(self.getSpikeHistogram(bins, plot = False, stretch = 1))
+#            if (i==0):
+#                data = hist_data
+#            else:
+#                data = data + hist_data
+#        return data
+        
+    # does not work yet...     
+    def stimulusCueHistogram(self, isi_interval, duration, rep, bins, neurons, area = -1 ):
         """ Computes a histogram for a given cue pattern based on several 
         repetitions """
         if area == -1:
@@ -823,16 +865,19 @@ class SGNetwork(Network):
             
         data = []
         for i in range(rep):
-            self.stimulus(isi_interval, 1, area, neurons, plot = False)
+            self.stimulus(isi_interval, duration, 1, area, neurons, plot = False)
             hist_data = np.array(self.getSpikeHistogram(bins, plot = False, stretch = 1))
             if (i==0):
                 data = hist_data
             else:
                 data = data + hist_data
         return data
+        
+
+
     
     def sampleSpikeHistogram(self, plot=True, title='Temporal spike evolution', rep = 5):
-        """Computes a network simulation with inter-stimulus-interval 70ms and creates a spike histogram"""
+        """Computes a network simulation with inter-stimulus-interval of 70ms and creates a spike histogram"""
         data = []
     
         isi_interval = 70
@@ -859,6 +904,7 @@ class SGNetwork(Network):
         mp.xlabel('ms')
         
     def sampleOnsetLatency(self, title='Onset latency', rep = 10, spike_take = 4):
+        """Generates a sample onset Latency with an inter-stimulus-interval of 150ms and 10 repetitions"""
         isi_interval = 150
         
         data = []
