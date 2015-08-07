@@ -14,13 +14,12 @@ import nest.raster_plot
 import io
 import csv
 
-import nest_help as nh
-
 import numpy as np
 import pickle
 
 import pamutils.pam2nest as pam2nest
 import pamutils.nest_vis as nest_vis
+import pamutils.nest_help as nh
 
 #EXPORT_PATH = '/home/ubuntu/ownCloud/work/Projekte/hippocampal_model/results/'
 #EXPORT_PATH = '../results/'
@@ -440,8 +439,8 @@ class Network(object):
                 print(self.m['neurongroups'][0][i][0] + " " + str(POA[i]))
         return POA 
     
-    def exportSpikes(self, filename):
-        """ Exports data from a list of spike detector ids into a given file
+    def exportSpikes(self, filename, t_range):
+        """ Exports data from a list of spike detector ids for a given time range (t_range) into a given file
         in CSV-format """
         f = open(filename, 'w')
         writer = csv.writer(
@@ -451,7 +450,7 @@ class Network(object):
         )
 
         for index, sd in enumerate(self.sd_list):
-            sender, times = nh.getEventsFromSpikeDetector(sd)
+            sender, times = nh.getEventsFromSpikeDetector(sd, t_range)
             for i in range(len(sender)):
                 writer.writerow([index, sender[i] - self.ngs[index][0], times[i]])
             
