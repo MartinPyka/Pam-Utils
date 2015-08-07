@@ -81,7 +81,7 @@ class Network(object):
     def createNetwork(self, 
                       w_means, w_sds, 
                       d_means, d_sds, 
-                      syn_model, 
+                      syn_model='static_synapse', 
                       neuron_model = 'iaf_psc_delta',
                       distrib = pam2nest.delayModel_delayDistribNormal,
                       connectModel = pam2nest.Connect,
