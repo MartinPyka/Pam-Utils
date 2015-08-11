@@ -12,6 +12,7 @@ from nest import *
 import nest.voltage_trace
 import nest.raster_plot
 import io
+import StringIO
 import csv
 
 import numpy as np
@@ -443,21 +444,15 @@ class Network(object):
     
     def exportSpikes(self,t_range):
         """ Exports data from a list of spike detector ids for a given time range (t_range) into CSV-format """
-        f = open('spikes.csv', 'w')
-        writer = csv.writer(
-            f,
-            delimiter=";",
-            quoting=csv.QUOTE_NONNUMERIC
-        )
-
-        for index, sd in enumerate(self.sd_list):
-            sender, times = nh.getEventsFromSpikeDetector(sd, t_range)
-            for i in range(len(sender)):
-                writer.writerow([index, sender[i] - self.ngs[index][0], times[i]])
-
-        with zipfile.ZipFile('recording.zip', 'a') as zf:
-            zf.write('spikes.csv')
-
+        
+        with zipfile.ZipFile(self.output_prefix, 'a') as zf:
+            
+            matrix = []
+            for index, sd in enumerate(self.sd_list):
+                sender, times = nh.getEventsFromSpikeDetector(sd, t_range)
+                for i in range(len(sender)):
+                    matrix.append([index, sender[i] - self.ngs[index][0], times[i]])
+            pam2nest.csv_write_matrix(zf, 'spikes', matrix)
 
 
     def stimulusCueTarget(self, isi_interval, c_t_interval, rep, cue = range(0,25), target = range(0,25)):
