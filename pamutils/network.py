@@ -24,8 +24,6 @@ import pamutils.pam2nest as pam2nest
 import pamutils.nest_vis as nest_vis
 import pamutils.nest_help as nh
 
-#EXPORT_PATH = '/home/ubuntu/ownCloud/work/Projekte/hippocampal_model/results/'
-#EXPORT_PATH = '../results/'
 DELAY_FACTOR = 4.36
 
 STIM_RATE = 100.
@@ -443,7 +441,8 @@ class Network(object):
         return POA 
     
     def exportSpikes(self,t_range):
-        """ Exports data from a list of spike detector ids for a given time range (t_range) into CSV-format """
+        """ Exports data from a list of spike detector ids for a given time range (t_range)
+        in CSV format into zip folder containing delay CSVs for Blender"""
         
         with zipfile.ZipFile(self.output_prefix, 'a') as zf:
             
