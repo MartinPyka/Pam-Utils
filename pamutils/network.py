@@ -12,15 +12,17 @@ from nest import *
 import nest.voltage_trace
 import nest.raster_plot
 import io
+import StringIO
 import csv
-
-import nest_help as nh
 
 import numpy as np
 import pickle
 
+import zipfile
+
 import pamutils.pam2nest as pam2nest
 import pamutils.nest_vis as nest_vis
+import pamutils.nest_help as nh
 
 #EXPORT_PATH = '/home/ubuntu/ownCloud/work/Projekte/hippocampal_model/results/'
 #EXPORT_PATH = '../results/'
@@ -110,7 +112,7 @@ class Network(object):
             self.syn_model,
             distrib = self.distrib,
             connectModel = self.connectModel,
-            delayfile_prefix = self.output_prefix)
+            delayfile = self.output_prefix)
 
 
         self.inputs = []
@@ -440,23 +442,19 @@ class Network(object):
                 print(self.m['neurongroups'][0][i][0] + " " + str(POA[i]))
         return POA 
     
-    def exportSpikes(self, filename):
-        """ Exports data from a list of spike detector ids into a given file
-        in CSV-format """
-        f = open(filename, 'w')
-        writer = csv.writer(
-            f,
-            delimiter=";",
-            quoting=csv.QUOTE_NONNUMERIC
-        )
-
-        for index, sd in enumerate(self.sd_list):
-            sender, times = nh.getEventsFromSpikeDetector(sd)
-            for i in range(len(sender)):
-                writer.writerow([index, sender[i] - self.ngs[index][0], times[i]])
-            
-        f.close()        
+    def exportSpikes(self,t_range):
+        """ Exports data from a list of spike detector ids for a given time range (t_range) into CSV-format """
         
+        with zipfile.ZipFile(self.output_prefix, 'a') as zf:
+            
+            matrix = []
+            for index, sd in enumerate(self.sd_list):
+                sender, times = nh.getEventsFromSpikeDetector(sd, t_range)
+                for i in range(len(sender)):
+                    matrix.append([index, sender[i] - self.ngs[index][0], times[i]])
+            pam2nest.csv_write_matrix(zf, 'spikes', matrix)
+
+
     def stimulusCueTarget(self, isi_interval, c_t_interval, rep, cue = range(0,25), target = range(0,25)):
         ''' Simulates pairing of cue-target stimulation with a given 
         isi_interval         : interstimulus-interval in ms
