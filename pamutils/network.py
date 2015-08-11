@@ -440,7 +440,7 @@ class Network(object):
                 print(self.m['neurongroups'][0][i][0] + " " + str(POA[i]))
         return POA 
     
-    def exportSpikes(self,t_range):
+    def exportSpikes(self,t_range=[0, float("Inf")]):
         """ Exports data from a list of spike detector ids for a given time range (t_range)
         in CSV format into zip folder containing delay CSVs for Blender"""
         
