@@ -131,10 +131,9 @@ class Network(object):
             ConvergentConnect(ng, sd)
             
         for i, ng in enumerate(self.ngs):
-            Connect(self.inputs[i], ng, params={'weight':2000., 'delay': 1.})
+            Connect(self.inputs[i], ng, conn_spec="one_to_one", syn_spec={'weight':2000., 'delay': 1.})
             
-        #Connect(self.cue, self.ngs[self.inputindex], params={'weight': 2000., 'delay': 1.})
-        Connect(self.target, self.ngs[self.outputindex], params={'weight': 2000., 'delay': 1.})
+        Connect(self.target, self.ngs[self.outputindex], conn_spec="one_to_one", syn_spec={'weight': 2000., 'delay': 1.})
 
         
     def addNoise(self, i, rate):
@@ -143,7 +142,7 @@ class Network(object):
         try:
             noise = Create("poisson_generator", len(self.ngs[i]))
             SetStatus(noise, [{'start':0., 'stop': float('inf'), 'rate': rate}])
-            Connect(noise, self.ngs[i], params = {'weight': 2000., 'delay': 1.})
+            Connect(noise, self.ngs[i], syn_spec = {'weight': 2000., 'delay': 1.})
             self.noiseLayers.append([noise, i])
         except IndexError:
             print( 'Warning: No noise added. Index of target layer (i) out of range' )          
@@ -163,16 +162,21 @@ class Network(object):
         '''
         inhL = Create(self.neuron_model, np.floor(len(self.ngs[i]) * percent).astype(int))
         self.inhLayers.append([inhL, i])
-        self.RandomConnect(self.ngs[i], inhL, w_exc_inh, s_exc_inh)
-        self.RandomConnect(inhL, self.ngs[i], w_inh_exc, s_inh_exc)
-        
+        self.Connect(self.ngs[i], inhL, 
+                     conn_spec = {'rule': 'fixed_indegree', 'indegree': s_exc_inh},
+                     syn_spec = {'weight': w_exc_inh})
+        self.Connect(inhL, self.ngs[i],
+                     conn_spec = {'rule': 'fixed_indegree', 'indegree': s_inh_exc},
+                     syn_spec = {'weight': w_inh_exc})
+
+    # TODO:MP deprecated function        
     def RandomConnect(self, ng1, ng2, w, s):
         """ Connects each ng1 neuron with s random ng2 neurons """
         for n in ng1:
             perm = np.random.permutation(len(ng2))
-            nest.ConvergentConnect([n],
-                                   np.array(ng2)[perm[:s]].tolist(),
-                                   weight = w, delay = 1.)
+            nest.Connect([n],
+                         np.array(ng2)[perm[:s]].tolist(),
+                         syn_spec = {'weight': w, 'delay': 1.})
 
     def setConnectionParams(self, c, params):
         ''' Configures the connection properties of all connections for a given
