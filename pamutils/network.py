@@ -437,7 +437,7 @@ class Network(object):
 
     def getPOA(self, printit = False, interval = [0, float('inf')]):
         '''Get percentage of activity for each network'''
-        POA = [nh.getPOA(self.ngs[i], self.sd_list[i], interval = [0,float('inf')]) for i in range(len(self.m['neurongroups'][0]))]
+        POA = [nh.getPOA(self.ngs[i], self.sd_list[i], interval = interval) for i in range(len(self.m['neurongroups'][0]))]
     
         if printit: 
             for i in range(len(POA)):
