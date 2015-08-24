@@ -26,8 +26,17 @@ def axon_diameter_unm(axon_diameter):
     #y = 2.2*sqrt(d)
     return np.log(axon_diameter * 2 + 1)*2
 
+def axon_diameter_unm2(axon_diameter, c = 2.3):
+    # the velocity function mimics the plot of figure 2 for unmyelinated fibers in
+    # Waxman 1980, Muscle and Nerve. This time the square root is used, as 
+    # described in figure 2
+    return np.sqrt(axon_diameter)*c
+
 def axon_diameter_unm_inv(mm_ms):
     return (np.exp(mm_ms/2.)-1)/2
+
+def axon_diameter_unm_inv2(mm_ms, c = 2.3):
+    return np.square(mm_ms / c)
 
 def axon_diameter_m(axon_diameter):
     # the velocity function mimics the plot of figure 2 for myelinated fibers in
@@ -49,7 +58,7 @@ def delayModel_axondiameter_unm(axon_diameter, sd, number=1):
     else:
         ad = np.random.lognormal(np.log(axon_diameter), sd, number)
 
-    return (1. / axon_diameter_unm(ad))
+    return (1. / axon_diameter_unm2(ad))
 
 def delayModel_axondiameter_m(axon_diameter, sd, number=1):
     """ Computes the delay per mm from myelinated axons based on 
