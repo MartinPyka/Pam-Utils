@@ -20,22 +20,15 @@ import numpy as np
 
 logger = logging.getLogger(__package__)
 
-def axon_diameter_unm(axon_diameter):
-    # the velocity function mimics the plot of figure 2 for unmyelinated fibers in
-    # Waxman 1980, Muscle and Nerve. 1 / velocity is the delay for one mm
-    #y = 2.2*sqrt(d)
-    return np.log(axon_diameter * 2 + 1)*2
 
-def axon_diameter_unm2(axon_diameter, c = 2.3):
+def axon_diameter_unm(axon_diameter, c = 1.06):
     # the velocity function mimics the plot of figure 2 for unmyelinated fibers in
-    # Waxman 1980, Muscle and Nerve. This time the square root is used, as 
-    # described in figure 2
+    # Waxman 1980, Muscle and Nerve. Factor c is taken from
+    # To Myelinate or Not to Myelinate?
+    # Quan Wen, Dmitri B. Chklovskii, 2010
     return np.sqrt(axon_diameter)*c
 
-def axon_diameter_unm_inv(mm_ms):
-    return (np.exp(mm_ms/2.)-1)/2
-
-def axon_diameter_unm_inv2(mm_ms, c = 2.3):
+def axon_diameter_unm_inv(mm_ms, c = 1.06):
     return np.square(mm_ms / c)
 
 def axon_diameter_m(axon_diameter):
