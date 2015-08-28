@@ -23,6 +23,7 @@ DELAY_FACTOR = 4.36
 
 
 def analyseNetwork():
+    nest.ResetKernel()
     m = pam2nest.import_connections(EXPORT_PATH + 'hippocampus_full.zip')
     
     nest_vis.printNeuronGroups(m)
@@ -44,10 +45,10 @@ def analyseNetwork():
     voltmeter       = Create("voltmeter", 2)
     espikes         = Create("spike_detector")
     
-    SetStatus(noise, [{'start': 0., 'stop': 30., 'rate': 100.0}])
+    SetStatus(noise, [{'start': 100., 'stop': 130., 'rate': 100.0}])
     SetStatus(dc_1, {'start': 10., 'stop': 10.5, 'amplitude': 100.})
 
-    Connect(noise, ngs[3][:50], params={'weight': 2000., 'delay': 1.})
+    Connect(noise, ngs[3][:50], conn_spec='one_to_one' , syn_spec = {'model': 'static_synapse', 'weight': 2000., 'delay': 1.})
 
     ConvergentConnect(ngs[0] + ngs[1] + ngs[2] + ngs[3] + ngs[4] + ngs[5],espikes)
     
