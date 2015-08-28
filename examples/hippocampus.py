@@ -17,6 +17,7 @@ import numpy as np
 import pamutils.pam2nest as pam2nest
 import pamutils.nest_vis as nest_vis
 
+import cProfile
 
 EXPORT_PATH = './'
 DELAY_FACTOR = 4.36
@@ -24,7 +25,7 @@ DELAY_FACTOR = 4.36
 
 def analyseNetwork():
     m = pam2nest.import_connections(EXPORT_PATH + 'hippocampus_full.zip')
-    
+    print("Loading done")
     nest_vis.printNeuronGroups(m)
     nest_vis.printConnections(m)
     
@@ -36,18 +37,16 @@ def analyseNetwork():
                                  w_means, w_sds,
                                  d_means, d_sds)
     
-    len(ngs)
+    print(len(ngs))
     
     noise         = Create("poisson_generator", 50)
-    dc_1            = nest.Create('dc_generator')
     
     voltmeter       = Create("voltmeter", 2)
     espikes         = Create("spike_detector")
     
-    SetStatus(noise, [{'start': 0., 'stop': 30., 'rate': 100.0}])
-    SetStatus(dc_1, {'start': 10., 'stop': 10.5, 'amplitude': 100.})
+    SetStatus(noise, [{'start': 100., 'stop': 120., 'rate': 100.0}])
 
-    Connect(noise, ngs[3][:50], params={'weight': 2000., 'delay': 1.})
+    Connect(noise, ngs[3][:50], conn_spec='one_to_one' , syn_spec = {'model': 'static_synapse', 'weight': 2000., 'delay': 1.})
 
     ConvergentConnect(ngs[0] + ngs[1] + ngs[2] + ngs[3] + ngs[4] + ngs[5],espikes)
     
@@ -58,6 +57,6 @@ def analyseNetwork():
 
    
 if __name__ == "__main__":
-    analyseNetwork()
+    cProfile.run('analyseNetwork()')
     
     

@@ -49,7 +49,7 @@ def analyseNetwork():
     SetStatus(noise, [{'start': 0., 'stop': 10., 'rate': 100.0}])
     SetStatus(dc_1, {'start': 10., 'stop': 10.5, 'amplitude': 100.})
 
-    Connect(noise, ngs[1][:50], params={'weight': 2000., 'delay': 1.})
+    Connect(noise, ngs[1][:50], conn_spec='one_to_one' , syn_spec = {'model': 'static_synapse', 'weight': 2000., 'delay': 1.})
 
     ConvergentConnect(ngs[0] + ngs[1],espikes)
     

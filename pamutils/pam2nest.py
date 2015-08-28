@@ -128,30 +128,38 @@ def Connect(g1, g2, connections, delays,
         Connect(g1, g2, m['c'][0], m['d'][0], 2.0, DELAY_FACTOR)
     """
     
-    delay_matrix = copy.deepcopy(connections)
+    connections = np.array(connections)
+    delays = np.array(delays)
+    g2 = np.array(g2)
     
-    for i in range(0, len(connections)):
+    # compute delays
+    delay_mm = delayModel(d_mean, d_sd, connections.shape)
+    
+    # compute weights
+    weight_matrix = np.random.randn(*connections.shape) * w_sd + w_mean
+    
+    if w_mean > 0:
+        weight_matrix[weight_matrix < 0.1] = 0.1
+    if w_mean < 0:
+        weight_matrix[weight_matrix > -0.1] = -0.1    
+    
+    # compute entire delay-matrix 
+    delay_matrix = delays * delay_mm
+    delay_matrix[delay_matrix < 0.1] = 0.1
+    
+    pre = []
+    params = []
+    for i, c in enumerate(connections):
+        mask = np.where(c != -1)[0]
+        if len(mask) == 0:
+            continue
+        pre.append(g1[i])
+        target = g2[mask]
+        weight = weight_matrix[i, mask]
+        delay = delay_matrix[i, mask]
+        params.append({'target':target, 'weight':weight, 'delay': delay}) 
         
-        delay_mm = max(delayModel(d_mean, d_sd), 0.1)
-
-        for j in range(0, len(connections[i])):
-            # if a synapse has really been created
-            if connections[i][j] >= 0:
-                weight = np.random.randn(1)[0] * w_sd + w_mean
-                if w_mean > 0:
-                    weight = max(weight, 0.1)
-                if w_mean < 0:
-                    weight = min(weight, 0.1)
-                    
-                # delay = np.random.randn(1)[0] * d_sd + d_mean
-                delay = max(delays[i][j] * delay_mm, 0.1)
-                nest.Connect([g1[i]], [g2[connections[i][j]]], syn_spec = {'model': syn_model, 'weight': weight, 'delay': delay})
-#                nest.DataConnect([g1[i]], 
-#                                 params=[{'target': [float(g2[connections[i][j]])],
-#                                         'weight': [np.random.randn(1)[0] * w_sd + w_mean], 
-#                                         'delay':  [delay]}],
-#                                 model=syn_model)                
-                delay_matrix[i][j] = delay
+    nest.DataConnect(pre, params=params, model = syn_model)
     return delay_matrix
 
 
@@ -355,7 +363,8 @@ def CreateNetwork(
             distrib_func = distrib[i]
             
         delay_matrix = connectModel(neurongroups[conn[1]], neurongroups[conn[2]], 
-                                    data['c'][conn[0]], data['d'][conn[0]], 
+                                    data['c'][conn[0]], 
+                                    data['d'][conn[0]], 
                                     weight, sd, delay, delay_sd,
                                     model, distrib_func)
         
