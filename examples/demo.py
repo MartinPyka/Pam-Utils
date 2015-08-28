@@ -24,6 +24,7 @@ DELAY_FACTOR = 4.36
 m = []
 
 def analyseNetwork():
+    nest.ResetKernel()
     global m
     m = pam2nest.import_connections(EXPORT_PATH + 'demo.zip')
     
