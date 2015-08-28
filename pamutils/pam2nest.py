@@ -154,7 +154,7 @@ def Connect(g1, g2, connections, delays,
         if len(mask) == 0:
             continue
         pre.append(g1[i])
-        target = c[mask]
+        target = g2[c[mask]]
         weight = weight_matrix[i, mask]
         delay = delay_matrix[i, mask]
         params.append({'target':target, 'weight':weight, 'delay': delay}) 

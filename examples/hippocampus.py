@@ -57,6 +57,6 @@ def analyseNetwork():
 
    
 if __name__ == "__main__":
-    cProfile.run('analyseNetwork()')
+    analyseNetwork()
     
     
