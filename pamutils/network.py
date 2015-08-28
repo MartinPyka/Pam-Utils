@@ -150,18 +150,22 @@ class Network(object):
        
     def addInhibitionLayer(self, i, percent, 
                              w_exc_inh, w_inh_exc, 
-                             s_exc_inh, s_inh_exc):
+                             s_exc_inh_per, s_inh_exc_per):
         ''' Add self-inhibition layer to a given neural layer
         i         : index of neural layer
         percent   : number of inhibitory neurons as percentage of number of 
                     neurons on layer
         w_exc_inh : exc to inh weight
         w_inh_exc : inh to exc weight
-        s_exc_inh : number of synapses from excitatory to inhibitory neurons
-        s_inh_exc : number of synapses from inhibitory to excitatory neurons
+        s_exc_inh_per : number of synapses from excitatory to inhibitory neurons in percent
+        s_inh_exc_per : number of synapses from inhibitory to excitatory neurons in percent
         '''
         inhL = Create(self.neuron_model, np.floor(len(self.ngs[i]) * percent).astype(int))
         self.inhLayers.append([inhL, i])
+        
+        s_exc_inh = np.floor(len(self.ngs[i]) * s_exc_inh_per).astype(int)
+        s_inh_exc = np.floor(len(self.ngs[i]) * s_inh_exc_per).astype(int)
+        
         self.Connect(self.ngs[i], inhL, 
                      conn_spec = {'rule': 'fixed_indegree', 'indegree': s_exc_inh},
                      syn_spec = {'weight': w_exc_inh})
