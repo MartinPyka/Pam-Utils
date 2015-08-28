@@ -132,7 +132,7 @@ def Connect(g1, g2, connections, delays,
     
     for i in range(0, len(connections)):
         
-        delay_mm = max(delayModel(d_mean, d_sd), 0.1)
+        delay_mm = delayModel(d_mean, d_sd)
 
         for j in range(0, len(connections[i])):
             # if a synapse has really been created
