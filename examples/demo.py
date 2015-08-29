@@ -25,6 +25,8 @@ m = []
 
 def analyseNetwork():
     nest.ResetKernel()
+    np.random.seed(1)
+    
     global m
     m = pam2nest.import_connections(EXPORT_PATH + 'demo.zip')
     
