@@ -913,3 +913,207 @@ class SGNetwork(Network):
             data.append(self.getSpikeOnsetTimes(spike_take = spike_take) - self.last_sim_time)     
         return data
         
+class BalancedNetwork(Network):
+    """Createa a random balanced network based on Brunel, 2000. Current version created for NEST version 2.2."""
+    
+    def createNetwork(self,
+                      #theta, tauMem,
+                      w_means, w_sds, 
+                      d_means, d_sds, 
+                      syn_model=['static_synapse'], 
+                      neuron_model = 'iaf_psc_delta',
+                      distrib = [pam2nest.delayModel_delayDistribNormal],
+                      connectModel = pam2nest.Connect,
+                      output_prefix = ''):
+        ''' Creates a network for a given model and vectors of weights and
+        delays plus their standard deviations '''
+        #self.theta = theta # membrane threshold potential
+        #self.tauMem = tauMem # time constant of membrane potential
+        self.w_means = w_means
+        self.w_sds = w_sds
+        self.d_means = d_means
+        self.d_sds = d_sds
+        self.syn_model = syn_model
+        self.neuron_model = neuron_model
+        self.distrib = distrib
+        self.connectModel = connectModel
+        self.output_prefix = output_prefix
+        self.initialize()
+   
+    
+    def initialize(self):
+        """ initializes the network based on the specified input given in 
+        pam2nest.CreateBalancedNetwork() with following parameters:
+        :param eta: external rate relative to threshold
+        :param epsilon: probability for connection
+        :param weight_ratio: ratio of inhibitory and excitatory weight
+        :param post_amp_exc: amplitude of excitatory EPSP in mV
+        :param post_amp_inh: amplitude of inhibitory (I)PSP
+        :param theta: membrane threshold potential
+        :param tauMem: time constant of membrane potential
+        """
+        # set default parameters for balanced model (from Brunel 2000) 
+        # crucial for asynchronous irregular firing of neurons
+        self.eta          = 2.0  # external rate relative to threshold
+        self.epsilon      = 0.1  # probability for connection
+        self.weight_ratio = 5.0  # ratio of inhibitory and excitatory weight
+        # amplitudes of post synaptic potentials
+        self.post_amp_exc = 0.1  # amplitude of excitatory EPSP in mV
+        self.post_amp_inh = -self.weight_ratio*self.post_amp_exc  # amplitude of inhibitory IPSP
+        # membrane potential parameters
+        self.theta = 20.0 # membrane threshold potential
+        self.tauMem = 20.0 # time constant of membrane potential
+
+        
+        
+        self.ngs = pam2nest.CreateBalancedNetwork(
+            self.m, self.neuron_model,
+            #self.tauMem, self.theta,
+            self.w_means, self.w_sds, 
+            self.d_means, self.d_sds,
+            self.syn_model,
+            distrib = self.distrib,
+            connectModel = self.connectModel,
+            delayfile_prefix = self.output_prefix)
+
+        
+        self.ConnectBalancedNet()
+            
+        
+    def SetNetworkSize(self):        
+        """Sets defaults of the neuron populations and computes the total number 
+        of inhibitoy and excitatory neurons in the given network based on the initial network size.
+        Creates excitatory and inhibitory neurons based on the given neuron model.
+        :param exc_nodes: list of excitatory neurons with 4:1 ratio to inhibitoy neurons
+        "param inh_nodes: list of inhibitory neurons with 1:4 ratio to excitatory neurons
+        :param num_neurons: number of neurons in the network
+        :param total_num_neurons: total number of inhibitory and excitatory neurons""" 
+        self.exc_neurons = []
+        self.inh_neurons= []
+        
+        num_neurons = 0
+        for i in range(0, len(self.ngs)):
+            num_neurons = num_neurons + len(self.ngs[i]) 
+        # number of neurons originally in network
+        self.num_neurons = num_neurons
+       
+        # Create neurons
+        self.exc_neurons = (Create(self.neuron_model, 4*self.num_neurons))
+        self.inh_neurons = (Create(self.neuron_model, 1*self.num_neurons))
+        
+        # total number of neurons        
+        self.total_num_neurons = len(self.exc_neurons) + len(self.inh_neurons)
+     
+    def CustomizeConnections(self):
+        """Sets the defaults for
+        synapses and connections,
+        poisson generator.
+        Creates customized synapses using copymodel. Customizes connection 
+        parameters using a fixed indegree with an indegree fixed in Con_exc and Con_inh.
+        Weight and delay values are taken from Brunel 2000."""
+        
+        self.SetNetworkSize()
+        
+        # Set defaults for synapses and connections per neuron
+        self.Con_exc = int(self.epsilon*len(self.exc_neurons))  # number of excitatory synapses
+        self.Con_inh = int(self.epsilon*len(self.inh_neurons))  # number of inhibitory synapses
+        self.Con_tot = int(self.Con_exc + self.Con_inh)    # total sum of synapses
+        
+        # Create customized synapses for exitatory and inhibitory neurons using the 
+        # vaulues defined in initilaize()
+        nest.CopyModel("static_synapse", "excitatory", {"weight": self.post_amp_exc, "delay":1.})
+        nest.CopyModel("static_synapse", "inhibitory", {"weight": self.post_amp_inh, "delay":1.})
+        
+#        # Customize connection parameters with a fixed and defined indegree for later use (NEST 2.7)
+#        conn_params_exc = {"rule": "fixed_indegree", "indedree": self.Con_exc}
+#        conn_params_inh = {"rule": "fixed_indegree", "indegree": self.Con_inh}
+        
+        # Customize connection parameters in NEST 2.2
+        self.conn_option_dict = {"allow_autapses": True, "allow_multapses":True}
+        
+        # Set Defaults for poisson generator
+        nu_theta = self.theta/(self.post_amp_exc*self.Con_exc*self.tauMem)
+        nu_ex = self.eta*nu_theta
+        self.p_rate = 1000.0*nu_ex*self.Con_exc
+        nest.SetDefaults("poisson_generator", {"rate":self.p_rate})
+               
+        
+        
+    def ConnectBalancedNet(self, delay = 1.5):
+        """Creates
+        poission generator,
+        nodes for excitatory and inhibitory neurons,
+        spike detectors for excitatory and inhibitory neurons,
+        configures the spikegenerators,
+        defines custom synapses,
+        and connects the model"""
+        
+        self.CustomizeConnections()
+        self.noise = []        # noise from a poisson generator
+        self.inputs_exc = []   # input for excitatory neurons 
+        self.inputs_inh = []   # input for inhibitory neurons
+        
+        # Create ONE poisson generator for all neurons and connect the model
+        noise = nest.Create("poisson_generator")
+        
+        # for NEST 2.7
+        # Connect(noise, self.exc_neurons, synp_spec = "excitatory")
+        # Connect(noise, self.inh_neurons, synp_spec = "excitatory")        
+
+        for ng in self.neurongroupnames:
+            
+            # Create and customize spike detectors for excitatory neuron group
+            self.sd_exc = Create("spike_detector")
+            SetStatus(self.sd_exc, [{"label": "balanced_net_exc",
+                                "withtime": True,
+                                "withgid": True,
+                                "to_file": True}])
+            # create and connect poisson generator and spike detector for all excitatory neurons
+            #noise = Create("poisson_generator", len(self.exc_neurons)) 
+            #Connect(noise, self.exc_neurons, model = "excitatory")
+            DivergentConnect(noise, self.exc_neurons, model = "excitatory")
+            ConvergentConnect(self.exc_neurons, self.sd_exc, model = "excitatory")
+            
+            # same for inhibitory neurons                    
+            self.sd_inh = Create("spike_detector")
+            SetStatus(self.sd_inh, [{"label": "balanced_net_inh",
+                                "withtime": True,
+                                "withgid": True,
+                                "to_file": True}])           
+            #noise = Create("poisson_generator", len(self.inh_neurons))
+            #Connect(noise, self.inh_neurons, model = "excitatory")
+            DivergentConnect(noise, self.exc_neurons, model = "excitatory")
+            ConvergentConnect(self.inh_neurons, self.sd_inh, model = "excitatory")
+            
+            # Create a list with all spike detectors
+            self.sd_list.extend([self.sd_exc, self.sd_inh])
+
+            # Old route without fixed indegree option for NEST 2.2 (does not work at the moment)
+            RandomDivergentConnect(self.exc_neurons, self.inh_neurons, self.Con_exc, weight=1.0, delay=1.0, options = self.conn_option_dict)
+            RandomDivergentConnect(self.inh_neurons, self.exc_neurons, self.Con_inh, weight=1.0, delay=1.0, options = self.conn_option_dict)
+            
+                          
+#            # Connect excitatory and inhibitory neuron population to all neurons (NEST 2.7)
+#            nest.Connect(self.exc_neurons, self.exc_neurons+self.inh_neurons, conn_params_exc, model = "excitatory")
+#            nest.Connect(self.inh_neurons, self.exc_neurons+self.inh_neurons, conn_params_inh, model = "inhibitory")
+                          
+    def plotBalancedNetwork(self, start = 0., end = -1):
+        '''Plots network independent of network size. If end is -1, then end is set to self.sim_time '''
+        if end == -1:
+            end = self.sim_time
+        
+        area_size = 0.5   
+        mp.figure()
+        for i in range(len(self.m['neurongroups'][0])):
+            mp.subplot(len(self.m['neurongroups'][0]), 2, (i + 1))
+            nh.scatter(self.sd_list[i], area = area_size)
+            mp.ylabel(self.m['neurongroups'][0][i][0])
+            mp.xlim((0., -1))
+            mp.subplot(len(self.m['neurongroups'][0]),2, (i + 3))
+            nh.scatter(self.sd_list[i], area = area_size)
+            mp.ylabel(self.m['neurongroups'][0][i][0])
+            mp.xlim((0., -1))
+
+            
+        self.getPOA(True, [start, end]); 
+        
