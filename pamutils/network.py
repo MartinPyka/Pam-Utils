@@ -118,8 +118,7 @@ class Network(object):
             self.inputs.append(Create("poisson_generator", ng[2]))
         self.cue             = self.inputs[self.inputindex]
         
-        self.target          = Create("poisson_generator",
-                                      self.neurongroupnames[self.outputindex][2])
+        self.target          = self.inputs[self.outputindex]
         
         self.dc_1            = nest.Create('dc_generator')
         
@@ -991,29 +990,24 @@ class BalancedNetwork(Network):
         
         
         for i, ng in enumerate(self.ngs):
-            
-            # Create poisson generators: One for input and one for noise
-            #self.inputs.append(Create("poisson_generator"))
         
             # Create poisson generator for every excitatory neuron as noise
             noise_exc = Create("poisson_generator", len(self.ngs[i]))
             SetStatus(noise_exc, [{'start':0., 'stop': float('inf'), 'rate': 20.}])
-            self.noiseLayers.append([noise, i]) 
          
             # Create and customize spike detectors for excitatory neuron group
             sd_exc = Create("spike_detector")
             SetStatus(sd_exc, [{"label": "balanced_net_exc",
                                 "withtime": True,
-                                "withgid": True}])
+                                "withgid": True}])           
             
-            # create and connect poisson generator and spike detector for all excitatory neurons
-            #self.inputs.append(Create("poisson_generator",len(self.ngs[i]))) 
-            # Connect poisson generators and spike detectors with excitatory neurons
-            #Connect(self.inputs[i], ng, params={"weight":2000., "delay":1.})
-
+            # create and connect poisson generator for inputs in excitatory neurons
+            self.inputs.append({self.inputindex:Create("poisson_generator", len(self.ngs[i]))}) 
+            Connect(self.inputs[i][self.inputindex], ng, params={"weight":2000., "delay":1.})
             
             # Connect poisson generators with excitatory neurons (for NEST 2.7 change params to syn_spec)
             Connect(noise_exc, ng, params = {'weight': 2000., 'delay': 1.})
+            
             # Connect spike detector with excitatory neurons
             ConvergentConnect(ng, sd_exc)
             
@@ -1025,20 +1019,14 @@ class BalancedNetwork(Network):
             SetStatus(sd_inh, [{"label": "balanced_net_inh",
                                 "withtime": True,
                                 "withgid": True}])          
-
-            # Connect poisson generator and spike detectors with inhibitory neurons
-            # self.inputs.append(Create("poisson_generator",len(ng)))
-
+                                
             # Create poisson generator for every inhibitory neuron as noise
             noise_inh = Create("poisson_generator", int(round(0.25*len(ng))))
             SetStatus(noise_inh, [{'start':0., 'stop': float('inf'), 'rate': 20.}])
-            self.noiseLayers.append([noise, i]) 
-            
-            #Connect(self.inputs[i], inh_neurons, params={"weight":2000., "delay":1.})
-            #DivergentConnect(noise, inh_neurons, model = "excitatory")
-            
+
             # Connect poisson generators with inhibitory neurons
             Connect(noise_inh, inh_neurons, params = {'weight': 2000., 'delay': 1.})
+            
             # Connect spike detectors with inhibitory neurons
             ConvergentConnect(inh_neurons, sd_inh, model = "excitatory")
             
@@ -1060,6 +1048,12 @@ class BalancedNetwork(Network):
             # NEST 2.7 Version: Connect excitatory and inhibitory neuron population to all neurons (NEST 2.7)
             #nest.Connect(ng, ng+inh_neurons, conn_params_exc, model = "excitatory")
             #nest.Connect(inh_neurons, ng+inh_neurons, conn_params_inh, model = "inhibitory")
+        
+        # Set Cue for inputlayer                  
+        self.cue             = self.inputs[self.inputindex][1]
+        
+        # Set target for outputlayer
+        self.target          = self.inputs[self.outputindex][1]
 
     def plotNetwork(self, start = 0., end = -1):
         '''Plots network independent of network size. If end is -1, then end is set to self.sim_time'''
@@ -1091,9 +1085,9 @@ class BalancedNetwork(Network):
         POA_Inh = [nh.getPOA(self.ngs[i], self.sd_list[i]['inh'], interval = [0,float('inf')]) for i in range(len(self.m['neurongroups'][0]))]
 
     
-        if printit: 
+        if printit:
+            print('Percentage of Activity')
             for i in range(len(POA_Exc)):
-                print('Percentage of Activity')
                 print(self.m['neurongroups'][0][i][0] + " " + str(POA_Exc[i]))
                 print(self.m['neurongroups'][0][i][0] + " " + str(POA_Inh[i]))
         return POA_Exc, POA_Inh 
