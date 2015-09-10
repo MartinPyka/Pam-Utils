@@ -127,7 +127,6 @@ def Connect(g1, g2, connections, delays,
         
         Connect(g1, g2, m['c'][0], m['d'][0], 2.0, DELAY_FACTOR)
     """
-    
     connections = np.array(connections)
     delays = np.array(delays)
     g2 = np.array(g2)

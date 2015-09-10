@@ -59,8 +59,12 @@ def analyseNetwork():
     Simulate(1000.0)
         
     nest.raster_plot.from_device(espikes, hist=False)
-    nest.raster_plot.show()    
-
+    nest.raster_plot.show()
+    
+    conns = nest.getConnections(ngs[1], ngs[0])
+    delays = nest.
+    
+    
    
 if __name__ == "__main__":
     analyseNetwork()
