@@ -59,7 +59,7 @@ class Network(object):
         self.dc_1            = []
 
         # spike detectors
-        self.sd_list         = [] # list with spike-detectors
+        self.sd_list         = []   # list with spike-detectors
         
         self.sim_time        = 0.   # simulation time
         self.last_sim_time   = 0.   # last duration, when self.simulate was called  
@@ -132,7 +132,7 @@ class Network(object):
         for i, ng in enumerate(self.ngs):
             Connect(self.inputs[i], ng, params={'weight':2000., 'delay': 1.})
             
-        #Connect(self.cue, self.ngs[self.inputindex], params={'weight': 2000., 'delay': 1.})
+        # Connect(self.cue, self.ngs[self.inputindex], params={'weight': 2000., 'delay': 1.})
         Connect(self.target, self.ngs[self.outputindex], params={'weight': 2000., 'delay': 1.})
 
         
@@ -337,7 +337,7 @@ class Network(object):
         
         
     def plotNetwork(self, start = 0., end = -1):
-        '''Plots network with independant of network size. If end is -1, then end is set to self.sim_time '''
+        '''Plots network. If end is -1, then end is set to self.sim_time '''
         if end == -1:
             end = self.sim_time
         
@@ -619,26 +619,7 @@ class Network(object):
             mp.xlabel('ms')        
         return np.array(data)
         
-        
-#
-# 
-#    def stimulusCueHistogram(self, isi_interval, duration, rep, bins, neurons, area = -1 ):
-#        """ Computes a histogram for a given cue pattern based on several 
-#        repetitions """
-#        if area == -1:
-#            area = self.inputindex
-#            
-#        data = []
-#        for i in range(rep):
-#            self.stimulus(isi_interval, duration, 1, area, neurons, False)
-#            hist_data = np.array(self.getSpikeHistogram(bins, plot = False, stretch = 1))
-#            if (i==0):
-#                data = hist_data
-#            else:
-#                data = data + hist_data
-#        return data
-    
-    
+
  
     def stimulusCueHistogram(self, isi_interval, duration, rep, bins, area = -1 ):
         """ Computes a histogram for a given cue pattern based on several 
@@ -837,25 +818,7 @@ class SGNetwork(Network):
             mp.xlabel('ms')        
         return np.array(data)
         
-   
-#    # does not work yet...     
-#    def stimulusCueHistogram(self, isi_interval, duration, rep, bins, neurons, area = -1 ):
-#        """ Computes a histogram for a given cue pattern based on several 
-#        repetitions """
-#        if area == -1:
-#            area = self.inputindex
-#            
-#        data = []
-#        for i in range(rep):
-#            self.stimulus(isi_interval, duration, area, neurons, False)
-#            hist_data = np.array(self.getSpikeHistogram(bins, plot = False, stretch = 1))
-#            if (i==0):
-#                data = hist_data
-#            else:
-#                data = data + hist_data
-#        return data
-        
-    # does not work yet...     
+    # does not work for the generalized script version     
     def stimulusCueHistogram(self, isi_interval, duration, rep, bins, neurons, area = -1 ):
         """ Computes a histogram for a given cue pattern based on several 
         repetitions """
@@ -911,9 +874,15 @@ class SGNetwork(Network):
             self.stimulusCue(isi_interval, 1, plot = False)
             data.append(self.getSpikeOnsetTimes(spike_take = spike_take) - self.last_sim_time)     
         return data
+
+
+
         
 class BalancedNetwork(Network):
-    """Createa a random balanced network based on Brunel, 2000. Current version created for NEST version 2.2."""
+    """Createa a random balanced network based on Brunel, 2000. Current version created for NEST version 2.2.
+        See block comments for NEST 2.7 versions"""
+    
+    
     
     def createNetwork(self,
                       w_means, w_sds, 
